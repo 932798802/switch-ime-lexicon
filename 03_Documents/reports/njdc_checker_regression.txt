@@ -1,0 +1,31 @@
+[OK]       ../dist/njubase3.a                                        3943866 B   N=150000  clean  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=1501146) before the end of the record table (167773296)
+[OK]       ../dist/njubase3-lite.a                                   1842608 B   N=80000   clean  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=801146) before the end of the record table (167773296)
+[OK]       ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njtan.a     256025 B   N=14184   other  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=199735) before the end of the record table (167830045)
+[OK]       ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njubase1.a      90402 B   N=3351    clean  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=34656) before the end of the record table (167773296)
+[OK]       ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njubase2.a      91258 B   N=3235    clean  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=33496) before the end of the record table (167773296)
+[OK]       ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njubase3.a    1606890 B   N=57954   extra  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=810618) before the end of the record table (167853876)
+[OK]       ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njcode.a       8204 B   N=285     clean  
+         [ok]   negative 1 (corrupt magic) rejected: bad magic
+         [ok]   negative 2 (truncate -4) rejected: bad trailing magic
+         [ok]   negative 3 (bogus N) rejected: pool (0x24=3996) before the end of the record table (167773296)
+[EXPECTED] ../out/dat0805/files/Iwnn/ZH/CN/pinyin/GB18030/njexyomi.a       1528 B   N=0       extra    <- by design: entry count is 0 (prediction-style file? not a record dictionary)
+
+ALL PASSED  (0 failure(s))

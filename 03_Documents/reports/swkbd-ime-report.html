@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switch 自带输入法深度拆解 · swkbd / iWnn 1.16.2 · 固件 22.5.0</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#14181d; --ink2:#3d4650; --ink3:#6b7683;
+    --line:#e3e7ec; --line2:#eef1f5;
+    --blue:#1f5fd1; --blue-bg:#eaf1fd;
+    --amber:#b3670a; --amber-bg:#fdf3e3;
+    --red:#c0392b; --red-bg:#fdeeec;
+    --green:#1c7d4d; --green-bg:#e9f6ef;
+    --purple:#6d3fbe; --purple-bg:#f2ecfd;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:40px 28px 72px}
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:32px}
+  .kicker{font-size:12px;letter-spacing:.18em;color:var(--ink3);text-transform:uppercase;font-weight:600}
+  h1{font-size:29px;line-height:1.35;margin:10px 0 14px;letter-spacing:-.01em}
+  h1 small{display:block;font-size:15px;font-weight:400;color:var(--ink3);margin-top:8px;letter-spacing:0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 10px;font-size:12.5px;color:var(--ink3)}
+  .meta span{background:#eceff3;border-radius:4px;padding:3px 9px}
+  h2{font-size:19px;margin:44px 0 14px;padding-left:11px;border-left:4px solid var(--blue);line-height:1.4}
+  h3{font-size:15.5px;margin:26px 0 10px;color:var(--ink2)}
+  p{margin:10px 0}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Consolas,"Cascadia Mono",monospace;font-size:12.5px}
+  code{background:#eef1f5;padding:1.5px 5px;border-radius:3px;color:#26313d}
+  pre{background:#f1f4f8;border:1px solid var(--line);border-left:3px solid var(--blue);
+      border-radius:5px;padding:13px 15px;overflow-x:auto;font-size:12.5px;line-height:1.65;color:#222c36}
+  .lead{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--ink);
+        border-radius:7px;padding:22px 24px;margin:0 0 8px}
+  .lead h2{margin:0 0 12px;border:0;padding:0;font-size:17px}
+  .lead ol{margin:12px 0 0;padding-left:20px}
+  .lead li{margin:9px 0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:12px;margin:18px 0 6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:15px 16px}
+  .card .n{font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+  .card .l{font-size:12px;color:var(--ink3);margin-top:4px;line-height:1.6}
+  .card.b{border-top:3px solid var(--blue)}
+  .card.g{border-top:3px solid var(--green)}
+  .card.a{border-top:3px solid var(--amber)}
+  .card.p{border-top:3px solid var(--purple)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);
+        border:1px solid var(--line);border-radius:7px;overflow:hidden;margin:14px 0;font-size:13.5px}
+  th{background:#eef1f5;text-align:left;padding:10px 12px;font-weight:600;color:var(--ink2);
+     font-size:12.5px;letter-spacing:.02em;border-bottom:1px solid var(--line)}
+  td{padding:10px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bar{height:7px;border-radius:4px;background:var(--blue);display:inline-block;vertical-align:middle;min-width:2px}
+  .bar.p{background:var(--purple)}
+  .bar.a{background:var(--amber)}
+  .tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:11px;font-weight:600;
+       white-space:nowrap;line-height:1.65}
+  .t-ok{background:var(--green-bg);color:var(--green)}
+  .t-mid{background:var(--amber-bg);color:var(--amber)}
+  .t-no{background:var(--red-bg);color:var(--red)}
+  .t-info{background:var(--blue-bg);color:var(--blue)}
+  .t-note{background:var(--purple-bg);color:var(--purple)}
+  .callout{border-radius:7px;padding:14px 17px;margin:16px 0;font-size:13.5px;border:1px solid}
+  .callout.warn{background:var(--amber-bg);border-color:#f0dcb8;color:#6b4708}
+  .callout.fix{background:var(--red-bg);border-color:#f3cdc7;color:#7c2a1e}
+  .callout.info{background:var(--blue-bg);border-color:#cddffa;color:#173e88}
+  .callout.ok{background:var(--green-bg);border-color:#c2e6d3;color:#14603a}
+  .callout b{color:inherit}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}.wrap{padding:26px 16px 56px}h1{font-size:23px}}
+  .fig{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:16px;margin:18px 0}
+  .figcap{font-size:12px;color:var(--ink3);margin-top:8px;text-align:center}
+  ul.tight{margin:8px 0;padding-left:20px}
+  ul.tight li{margin:5px 0}
+  .kbd{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:#e7ebf0;
+       border:1px solid #d3d9e0;border-bottom-width:2px;border-radius:4px;padding:1px 6px}
+  footer{margin-top:52px;padding-top:18px;border-top:1px solid var(--line);
+         font-size:12.5px;color:var(--ink3)}
+  @media print{body{background:#fff}.wrap{max-width:none;padding:0}
+    .card,table,.fig,.lead{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">离线固件逆向 · 技术侦察报告 v6</div>
+  <h1>Switch 自带输入法深度拆解
+    <small>swkbd ＋ OMRON iWnn 1.16.2 ＋ 独立词典 title —— 三个痛点的真实落点</small>
+  </h1>
+  <div class="meta">
+    <span>固件 22.5.0</span>
+    <span>Atmosphere 1.11.2 · emuMMC SD00</span>
+    <span>数据源 F:/NSbackup/20260927（实机 SD 全量备份）</span>
+    <span>238 个 NCA · prod.keys 231 项</span>
+    <span>2026-09-27</span>
+  </div>
+</header>
+
+<div class="lead">
+  <h2>结论先行</h2>
+  <p>Switch 的输入法不是「一个 applet」，而是<strong>三段式结构</strong>：<b>swkbd</b>（界面与宿主，titleId
+  <code>0100000000001008</code>）＋ <b>OMRON iWnn 1.16.2</b>（输入引擎，编译在 swkbd 的 <code>main</code> 内）
+  ＋ <b>独立词典 title</b>（数据，<code>0100000000000805</code> / <code>0100000000000808</code>）。</p>
+  <ol>
+    <li><b>「没有游戏词库」的落点是真实存在的</b> —— 词库是独立 title 里的普通 RomFS 文件
+      （<code>njtan.a</code> / <code>njubase*.a</code> 等，共 17.25 MB 中文＋韩文、18.67 MB 日文＋欧美）。
+      上一版报告判「没有词库可换」是<b>错的</b>，因为它只在 swkbd 自己的 RomFS 里找。
+      <b>而且可以覆盖</b>：swkbd 取词典走 <code>OpenDataStorageByDataId</code>，
+      这正是 Atmosphere <code>fs.mitm</code> 会套 LayeredFS 的路径（源码级证据见 §5.5）。</li>
+    <li><b>swkbd 22.5.0 确实支持中文输入</b> —— 简体（拼音 GB2312/GB18030）、繁体（注音 / 仓颉 / 速成 / 粤拼 / 笔画）、
+      韩文、日文。上一版依据一份被截断的文本表判「没有中文」，<b>错的</b>。</li>
+    <li><b>「联想差」有量化解释</b> —— 中文预测词典 <code>njexyomi.a</code> 只有 <b>1.5 KB</b>，
+      是近乎空壳的占位文件；日文同类文件 94 KB，而日文主词典 4.89 MB。这是「候选词贫弱」的直接原因。</li>
+    <li><b>「键位不好」可改但工程重</b> —— 布局是 bflyt 二进制资源（<code>lyt/*.szs</code>），
+      且逻辑键位映射在代码里；改图不改行为。</li>
+    <li><b>（v4 新增）私有格式 NJDC 已 100% 解出，并已实际生成可用词典</b> ——
+      读→写往返重建 <b>零语义差异</b>；据此生成的 <b>150,000 条</b>中文拼音词典
+      （含 252 条游戏词表）<b>原版条目零丢失、全部结构校验通过</b>。
+      部署包与验证方法见 <code>dist/README.md</code>，规范与证据见 <b>§6.6</b>。</li>
+    <li><b>（v5 新增）已实机验证生效</b> —— 覆盖 <code>njubase3.a</code> 后，
+      真机上能打出原版词典里根本没有的词。路线从「源码级成立」升级为
+      <b>最高等级证据：实机跑通</b>。附带确认：整个文件连版式一起换掉（extra → clean）引擎照常接受，
+      说明 iWnn 完全按文件自身头部字段寻址。</li>
+    <li><b>（v6 新增）修掉一个真 bug，并做出可用的简拼（首字母联想）</b> ——
+      产物曾含 <b>4,316 个重复键</b>（打 <code>ling</code> 时候选里「零」出现 3 次），
+      已修，五份产物重复数归零且原版条目零丢失；
+      另生成 <b>简拼包</b>（<code>sljt</code> → 杀戮尖塔），并
+      <b>于 2026-09-27 实机验证通过</b> —— 连纯数字 <code>0000</code>、非音节串 <code>zzzz</code>
+      都能命中，说明引擎<b>对读法形态零校验</b>。详见 <b>§6.7</b>。</li>
+  </ol>
+</div>
+
+<div class="cards">
+  <div class="card b">
+    <div class="n">5.50 MB</div>
+    <div class="l">swkbd <code>main</code> 解压后体积<br>text 3.99 + rodata 1.10 + data 0.41</div>
+  </div>
+  <div class="card g">
+    <div class="n">35.9 MB</div>
+    <div class="l">两个词典 title 的 RomFS 合计<br>0805 = 17.25 MB ／ 0808 = 18.67 MB</div>
+  </div>
+  <div class="card a">
+    <div class="n">1.5 KB</div>
+    <div class="l">中文预测词典 <code>njexyomi.a</code><br>「联想不行」的直接成因</div>
+  </div>
+  <div class="card p">
+    <div class="n">已实机验证</div>
+    <div class="l">本工程词库在真机生效<br>打得出原版没有的词</div>
+  </div>
+  <div class="card g">
+    <div class="n">150,000 条</div>
+    <div class="l">已生成可用中文词典<br>重复条目 0 · 原版丢失 0</div>
+  </div>
+</div>
+
+<h2>1 · 架构与数据流</h2>
+
+<div class="fig">
+<svg viewBox="0 0 1000 470" width="100%" role="img" aria-label="swkbd 与 iWnn 词典 title 的架构关系图">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3d4650"/>
+    </marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f5fd1"/>
+    </marker>
+  </defs>
+
+  <!-- game -->
+  <rect x="24" y="26" width="150" height="52" rx="6" fill="#eef1f5" stroke="#c7cfd8"/>
+  <text x="99" y="47" text-anchor="middle" font-size="13" font-weight="600" fill="#14181d">游戏 / 系统界面</text>
+  <text x="99" y="65" text-anchor="middle" font-size="11" fill="#6b7683">AppletId 0x11</text>
+
+  <line x1="174" y1="52" x2="228" y2="52" stroke="#3d4650" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="200" y="44" text-anchor="middle" font-size="10" fill="#6b7683">调用</text>
+
+  <!-- swkbd -->
+  <rect x="230" y="18" width="360" height="330" rx="8" fill="#eaf1fd" stroke="#1f5fd1" stroke-width="1.6"/>
+  <text x="248" y="42" font-size="13.5" font-weight="700" fill="#173e88">swkbd　0100000000001008</text>
+  <text x="248" y="59" font-size="10.5" fill="#3d4650">NCA c65a992e…nca　3,848,192 B　key_area_key_application_15</text>
+
+  <rect x="246" y="72" width="328" height="126" rx="6" fill="#ffffff" stroke="#cddffa"/>
+  <text x="258" y="91" font-size="12" font-weight="700" fill="#14181d">ExeFS 3.22 MB（PFS0）</text>
+  <text x="258" y="110" font-size="11" fill="#3d4650"><tspan font-weight="600">main</tspan> 3,207,722 B　NSO0 · 单块 LZ4 压缩</text>
+  <text x="266" y="128" font-size="10.5" fill="#6b7683">解压后 ≈ 5.50 MB：text 3.99 / rodata 1.10 / data 0.41</text>
+  <text x="258" y="148" font-size="10.5" fill="#173e88">含 OMRON iWnn 1.16.2 · nn::atk · nn::font · KeyboardPredict</text>
+  <text x="258" y="166" font-size="10.5" fill="#6b7683">data 段另有 243 个 <tspan font-family="monospace">_DIC</tspan> 控制块（句柄表，无词条体）</text>
+  <text x="258" y="186" font-size="10.5" fill="#6b7683">main.npdm 1,316 B</text>
+
+  <rect x="246" y="206" width="328" height="126" rx="6" fill="#ffffff" stroke="#cddffa"/>
+  <text x="258" y="225" font-size="12" font-weight="700" fill="#14181d">RomFS 629 KB —— 47 文件 / 542,852 B</text>
+  <text x="258" y="244" font-size="10.5" fill="#3d4650">lyt/*.szs　6 个键盘布局（Yaz0 + SARC + bflyt/bflan）</text>
+  <text x="258" y="261" font-size="10.5" fill="#3d4650">message/&lt;18 语言&gt;/*.msbt　UI 文本表</text>
+  <text x="258" y="278" font-size="10.5" fill="#3d4650">common/agl · shader · sead　渲染资源</text>
+  <text x="258" y="295" font-size="10.5" fill="#3d4650">sound/swkbd.bfsar　音效（FSAR = sound archive）</text>
+  <text x="258" y="318" font-size="10.5" font-weight="600" fill="#c0392b">※ 本目录不含任何词典</text>
+
+  <!-- dic mount -->
+  <line x1="590" y1="150" x2="662" y2="150" stroke="#1f5fd1" stroke-width="2" marker-end="url(#ab)"/>
+  <text x="626" y="140" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1f5fd1">挂载</text>
+  <text x="626" y="168" text-anchor="middle" font-size="10" fill="#6b7683" font-family="monospace">dic://Iwnn</text>
+  <text x="626" y="182" text-anchor="middle" font-size="10" fill="#6b7683" font-family="monospace">dic2://Iwnn</text>
+
+  <!-- dict titles -->
+  <rect x="664" y="52" width="312" height="122" rx="7" fill="#e9f6ef" stroke="#1c7d4d" stroke-width="1.6"/>
+  <text x="680" y="74" font-size="12.5" font-weight="700" fill="#145c39">0100000000000805</text>
+  <text x="680" y="91" font-size="10.5" fill="#3d4650">Data / RomFS　17.25 MB / 76 文件　ZH ＋ KO</text>
+  <text x="680" y="110" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/ZH/CN/pinyin/GB18030/</text>
+  <text x="680" y="125" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/ZH/TW/{pinyin,bopomofo,cangjie}/</text>
+  <text x="680" y="140" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/ZH/HK/{jyutping,cangjie,stroke}/</text>
+  <text x="680" y="155" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/KO/　Iwnn/ZH/CN/stroke/</text>
+  <text x="680" y="169" font-size="10" font-weight="600" fill="#145c39">nj*.a · nj*.ad1　→ NJDC 格式</text>
+
+  <rect x="664" y="190" width="312" height="122" rx="7" fill="#f2ecfd" stroke="#6d3fbe" stroke-width="1.6"/>
+  <text x="680" y="212" font-size="12.5" font-weight="700" fill="#4a2a86">0100000000000808</text>
+  <text x="680" y="229" font-size="10.5" fill="#3d4650">Data / RomFS　18.67 MB / 77 文件　JA ＋ 欧美</text>
+  <text x="680" y="248" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/JA/32/　4.89 MB</text>
+  <text x="680" y="263" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/JA_small/32/</text>
+  <text x="680" y="278" font-size="10" fill="#3d4650" font-family="monospace">Iwnn/DE|EN|ES|FR|IT|NL|PT|RU/</text>
+  <text x="680" y="293" font-size="10" fill="#3d4650" font-family="monospace">（large / regular 两档）</text>
+  <text x="680" y="307" font-size="10" font-weight="600" fill="#4a2a86">同一 NJDC 格式</text>
+
+  <!-- engine note -->
+  <rect x="24" y="252" width="176" height="80" rx="6" fill="#fdf3e3" stroke="#e0c48a"/>
+  <text x="38" y="272" font-size="11" font-weight="700" fill="#6b4708">「联想差」的成因</text>
+  <text x="38" y="290" font-size="10" fill="#6b4708">中文 njexyomi.a = 1.5 KB</text>
+  <text x="38" y="305" font-size="10" fill="#6b4708">日文 njexyomi*.a = 94 KB</text>
+  <text x="38" y="322" font-size="10" fill="#6b4708">预测逻辑在 main，无统计模型</text>
+</svg>
+<div class="figcap">图 1　swkbd 只负责界面与引擎，词典数据由独立系统数据 title 经 <span class="mono">dic://Iwnn</span> 挂载</div>
+</div>
+
+<h2>2 · 引擎身份与能力（硬证据）</h2>
+
+<p>swkbd <code>main.rodata</code> 尾部（偏移 <code>0x10D625</code>）直接印着构建时的 SDK 标签：</p>
+<pre>SDK MW+OmronSoftware+iWnn-1_16_2
+SDK MW+Nintendo+NintendoWare_Atk-22_1_15-Release
+SDK MW+Nintendo+NintendoWare_Font-22_1_15-Release</pre>
+
+<p>同段 rodata 中出现词典挂载点与全部词典组件名，与 0805 的 RomFS 路径<b>逐字对应</b>：</p>
+<pre>dic2://Iwnn      dic://Iwnn      KeyboardPredict
+njtan.a  njexyomi.a  njcangjie.a  njcode.a  njubase1.ad1  njubase1br.a
+keisei/njubase1.ad1      cangjie/quick</pre>
+
+<div class="callout info">
+<b>路径闭合验证：</b>swkbd 侧只有片段 <code>cangjie/quick</code> 与 <code>keisei/njubase1.ad1</code>；
+0805 侧存在完整路径 <code>Iwnn/ZH/TW/cangjie/quick/</code> 与 <code>Iwnn/ZH/TW/pinyin/keisei/njubase1.ad1</code>。
+两者拼接完全吻合 —— 词典来源确认为 0805。
+</div>
+
+<p>中文输入能力由文本表直接证实。<code>message/CNzh/swkbd.msbt</code> 的「选择键盘」列表末尾原文：</p>
+<pre>简体中文 / 繁體中文 / 한국어
+日本語　ローマ字入力 / 日本語　50音（横並び）（左から）（右から）
+English(US/UK) / Français / Español / Deutsch / Italiano / Nederlands / Português / Русский</pre>
+
+<p>并且 <b>18 种语言的 <code>swkbd.msbt</code> 全部</b>含
+<code>SwkbdAddKeytop_ZHSimplifiedChinese</code>、<code>SwkbdAddKeytop_ZHTraditionalChinese</code>、
+<code>SwkbdFooter_KanaRotate</code>、<code>SwkbdFooter_CapsLockOn_TraditionalChinese</code> 等标签 ——
+这不是「界面汉化」，是**输入模式本身**。</p>
+
+<h2>3 · 词典 title 的完整清单</h2>
+
+<p>按 RomFS 目录树逐级遍历（<code>parent/child/sibling</code> 为字节偏移链表）得到的全部内容。
+条形长度与字节数成正比。</p>
+
+<h3>0100000000000805 —— 亚洲：中文四地 ＋ 韩文（76 文件 / 17.25 MB）</h3>
+<table>
+  <thead><tr><th>路径</th><th class="num">文件</th><th class="num">字节</th><th style="width:150px">体量</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">Iwnn/ZH/CN/pinyin/GB18030/</td><td class="num">11</td><td class="num">2,807,207</td><td><i class="bar" style="width:150px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/CN/pinyin/GB2312/</td><td class="num">10</td><td class="num">2,639,488</td><td><i class="bar" style="width:141px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/HK/jyutping/</td><td class="num">8</td><td class="num">2,645,342</td><td><i class="bar" style="width:141px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/TW/pinyin/</td><td class="num">4</td><td class="num">1,868,612</td><td><i class="bar" style="width:100px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/TW/bopomofo/</td><td class="num">4</td><td class="num">1,764,104</td><td><i class="bar" style="width:94px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/CN/stroke/GB18030/</td><td class="num">1</td><td class="num">1,021,518</td><td><i class="bar" style="width:55px"></i></td></tr>
+    <tr><td class="mono">Iwnn/KO/</td><td class="num">4</td><td class="num">965,434</td><td><i class="bar" style="width:52px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/TW/pinyin/{keisei,no_keisei}/</td><td class="num">8</td><td class="num">1,012,176</td><td><i class="bar" style="width:54px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/TW/bopomofo/{keisei,no_keisei}/</td><td class="num">8</td><td class="num">912,068</td><td><i class="bar" style="width:49px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/HK/cangjie/ ＋ quick/</td><td class="num">6</td><td class="num">659,210</td><td><i class="bar" style="width:35px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/TW/cangjie/ ＋ quick/</td><td class="num">6</td><td class="num">705,001</td><td><i class="bar" style="width:38px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/{TW,HK}/stroke/</td><td class="num">2</td><td class="num">883,396</td><td><i class="bar" style="width:47px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ZH/CN/stroke/GB2312/</td><td class="num">1</td><td class="num">202,700</td><td><i class="bar" style="width:11px"></i></td></tr>
+  </tbody>
+</table>
+
+<h3>0100000000000808 —— 日文 ＋ 欧美（77 文件 / 18.67 MB）</h3>
+<table>
+  <thead><tr><th>路径</th><th class="num">文件</th><th class="num">字节</th><th style="width:150px">体量</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">Iwnn/JA/32/</td><td class="num">7</td><td class="num">4,889,008</td><td><i class="bar p" style="width:150px"></i></td></tr>
+    <tr><td class="mono">Iwnn/JA_small/32/</td><td class="num">7</td><td class="num">2,100,485</td><td><i class="bar p" style="width:64px"></i></td></tr>
+    <tr><td class="mono">Iwnn/DE/{large,regular}/</td><td class="num">8</td><td class="num">2,391,968</td><td><i class="bar p" style="width:73px"></i></td></tr>
+    <tr><td class="mono">Iwnn/FR/FR/{large,regular}/ ＋ FR/CA/regular/</td><td class="num">12</td><td class="num">2,943,619</td><td><i class="bar p" style="width:90px"></i></td></tr>
+    <tr><td class="mono">Iwnn/RU/{large,regular}/</td><td class="num">8</td><td class="num">1,879,483</td><td><i class="bar p" style="width:58px"></i></td></tr>
+    <tr><td class="mono">Iwnn/ES/ES/</td><td class="num">4</td><td class="num">1,035,150</td><td><i class="bar p" style="width:32px"></i></td></tr>
+    <tr><td class="mono">Iwnn/IT/IT/</td><td class="num">4</td><td class="num">959,248</td><td><i class="bar p" style="width:29px"></i></td></tr>
+    <tr><td class="mono">Iwnn/NL/NL/</td><td class="num">4</td><td class="num">1,002,826</td><td><i class="bar p" style="width:31px"></i></td></tr>
+    <tr><td class="mono">Iwnn/PT/{BR,PT}/ ＋ 公共</td><td class="num">8</td><td class="num">1,294,039</td><td><i class="bar p" style="width:40px"></i></td></tr>
+    <tr><td class="mono">Iwnn/EN/{US,GB}/ ＋ 公共</td><td class="num">7</td><td class="num">1,045,590</td><td><i class="bar p" style="width:32px"></i></td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+<b>中日词典体量对比值得注意：</b>日文主词典 <code>JA/32</code> = 4.89 MB，中文拼音
+<code>CN/pinyin/GB18030</code> = 2.81 MB。而<b>预测/联想词典</b> <code>njexyomi.a</code>：
+中文仅 <b>1,528 B</b>、粤拼 3,606 B、仓颉 1,710 B；日文 <code>njexyomi.a</code> 也只有 94 KB。
+<b>这就是「联想功能不行」的量化解释</b> —— 不是算法不会联想，是几乎没有可供联想的词条。
+</div>
+
+<h3>词典文件格式（已验证）</h3>
+<p>全部 <code>nj*.a</code> / <code>nj*.ad1</code> 以魔数 <code>NJDC</code> 开头，<b>大端序</b>：</p>
+<pre>0x00  "NJDC"
+0x04  u16 version      （1 = exyomi 类，2 = base/tan 类）
+0x08  u32  0x00040000 / 0x00050000
+0x0C  u32  ≈ 数据段长度
+0x10  u32  header_size （base 类 0x54，exyomi 类 0x3C）
+0x14  u32 / 0x18 u32 / 0x1C u32   各段计数</pre>
+<p>这是 iWnn 的私有索引容器（trie ＋ 记录库），<b>不存在「丢一个 txt 就生效」的入口</b>。
+要加词，必须先能生成合法的 <code>NJDC</code>。</p>
+
+<h2>4 · 三个痛点的真实成因</h2>
+
+<table>
+  <thead><tr><th style="width:150px">痛点</th><th>已定位的成因</th><th style="width:210px">关键证据</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>① 按键位置不好</b></td>
+      <td>布局是 <b>bflyt 二进制资源</b>，只有 4 类基础键帽（50on / Qwerty / Numeric / Sign）可切换；
+          键位坐标写死在 bflyt 内，无任何配置项。<b>更麻烦的是逻辑键位映射编译在代码里</b> —— 改图不改行为。</td>
+      <td class="mono">lyt/Qwerty.szs 内含<br>SwkbdBaseKeytopQwerty<br>SwkbdBaseKeytopQwerty_ChangeInputMode</td>
+    </tr>
+    <tr>
+      <td><b>② 联想功能不行</b></td>
+      <td>预测词典 <code>njexyomi.a</code> 中文仅 1.5 KB（近乎空壳）；预测逻辑位于 <code>main</code> 的
+          <code>KeyboardPredict</code> 模块，<b>无统计语言模型</b>，只有词表级匹配。</td>
+      <td class="mono">0805 清单<br>njexyomi.a = 1,528 B<br>rodata: KeyboardPredict</td>
+    </tr>
+    <tr>
+      <td><b>③ 没有游戏词库</b></td>
+      <td>词库确实是<b>独立 title 的独立文件</b>，落点真实存在；但格式是私有 <code>NJDC</code>，
+          且系统不提供用户词典注册 UI，也没有任何 <code>userdict</code> / <code>learning</code> 持久化入口。</td>
+      <td class="mono">0805/0808 清单<br>swkbd 全段无<br>userdic/learning 相关串</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5 · 四条路线：落点、判定与成本</h2>
+
+<table>
+  <thead><tr><th style="width:170px">路线</th><th>覆盖目标</th><th style="width:132px">判定</th><th>主要成本 / 风险</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>A. 扩充词库</b><br><span class="tag t-info">落点最准</span></td>
+      <td class="mono">LayeredFS 覆盖 0100000000000805 的<br>Iwnn/ZH/CN/pinyin/GB18030/<br>njtan.a · njubase1~3.a · njexyomi.a</td>
+      <td><span class="tag t-mid">需先写 NJDC 编解码器</span></td>
+      <td>需逆向／复刻 iWnn 的 trie ＋ 记录库索引结构。失败后果可控（词典校验不过 → 该输入模式不可用），不伤系统。</td>
+    </tr>
+    <tr>
+      <td><b>B. 改键位</b><br><span class="tag t-mid">工程偏重</span></td>
+      <td class="mono">LayeredFS 覆盖 0100000000001008 的<br>lyt/Qwerty.szs · lyt/50on.szs<br>（Yaz0 压缩的 SARC，内含 bflyt/bflan）</td>
+      <td><span class="tag t-mid">理论可改</span></td>
+      <td>需 Yaz0 编码器 ＋ SARC 打包 ＋ bflyt 编辑器（SwitchLayoutEditor / Switch-Toolbox 量级）；
+          <b>且键位映射在 code 内，视觉位置与输入行为会脱节</b>。</td>
+    </tr>
+    <tr>
+      <td><b>C. 换引擎</b><br><span class="tag t-no">唯一能交付全新输入法</span></td>
+      <td class="mono">LayeredFS 覆盖 0100000000001008 的<br>ExeFS main（3.21 MB NSO0）</td>
+      <td><span class="tag t-no">数人月</span></td>
+      <td>先例 uLaunch（开源重写 qlaunch）。<b>风险最高</b>：swkbd 崩溃 → 全系统键盘失效（含所有游戏与系统界面）。</td>
+    </tr>
+    <tr>
+      <td><b>D. sysmodule 做 am 层 mitm</b></td>
+      <td>拦截／改写 applet 调用参数</td>
+      <td><span class="tag t-no">已证伪</span></td>
+      <td>sysmodule 拿不到 applet 代理（switchbrew 明载），不能代替游戏发起 swkbd 调用。
+          上限是「改参数 / 重定向」，<b>造不出拼音引擎</b>。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+<b>路线 A 的置信度已升级：从「中 · 需实测」→「高 · 代码级证实」。</b>
+此前不确定的是「系统 Data title 的 romfs 会不会经过 <code>fs.mitm</code>」。现已用 Atmosphere 官方源码
+＋ swkbd 自身 <code>rodata</code> 完成三环闭环，见下节。
+</div>
+
+<h2>5.5 · 路线 A 可行性：代码级证据链（v3 新增）</h2>
+
+<p>「词典 title 能否被 LayeredFS 覆盖」要三环全成立。三环都已找到硬证据：</p>
+
+<table>
+  <thead><tr><th style="width:150px">环节</th><th>证据</th><th style="width:104px">来源</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>① 词典走哪条 fs API</b></td>
+      <td>swkbd <code>main.rodata</code> 中出现 <code>OpenDataStorageByDataId</code>（@0xdcab）、
+        <code>MountRom</code>（@0xc0b6）、<code>QueryMountRomCacheSize</code>（@0xd3cb）、
+        <code>fsp-srv</code>（@0x288a0）、日志串 <code>, systemdataid: 0x%lX, size: %zu</code>（@0x87b4）、
+        mangled <code>N2nn2fs15RomFsFileSystemE</code>。<br>
+        → 词典来自<b>按 title id 打开的数据归档</b>，不是 swkbd 自己的 romfs。</td>
+      <td><span class="tag t-ok">二进制实测</span><br><code>nso_scan.py</code></td>
+    </tr>
+    <tr>
+      <td><b>② Atmosphere 拦不拦</b></td>
+      <td><code>fs_mitm_service.cpp</code> 中 <code>OpenDataStorageByDataId</code> 明确实现了 layered 分支：
+        <code>HasSdRomfsContent(data_id)</code> 为真时返回 <code>GetLayeredRomfsStorage(data_id, …)</code>。<br>
+        对照：<code>OpenFileSystemWithId</code> 只服务 web applet 的手册内容，与 romfs 覆盖无关。</td>
+      <td><span class="tag t-ok">官方源码</span></td>
+    </tr>
+    <tr>
+      <td><b>③ 前置开关默认值</b></td>
+      <td>mitm 的第一道 gate 是「调用方 swkbd 必须 ProgramSpecific」。
+        <code>cfg_override.board.nintendo_nx.inc</code> 里
+        <code>g_default_override_key = { key_combination = HidNpadButton_L, override_by_default = true }</code>，
+        且 <code>IsOverrideMatch = override_by_default ^ keys_triggered</code> → <b>不按 L 即为真</b>。
+        这同时也是「按住 L 启动就禁用该游戏 mod」的机制。</td>
+      <td><span class="tag t-ok">官方源码</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+<b>实机落点（overlay 语义）：</b><br>
+<code>sd:/atmosphere/contents/0100000000000805/romfs/Iwnn/ZH/CN/pinyin/GB18030/&lt;文件&gt;</code><br>
+只需放<b>要改的文件</b>，其余自动回落到原 romfs。
+<b>注意</b>：不要只建空目录 —— <code>HasSdRomfsContent</code> 要求目录内条目数 &gt; 0 才算命中。
+</div>
+
+<div class="callout warn">
+<b>残余风险（诚实标注）：</b>
+① <b>内存</b> —— LayeredFS 要在内存里重建虚拟 romfs 索引，而词典 title 达 17–18 MB / 76+ 文件，
+applet 内存池有硬上限；冒烟测试应从<b>单个小文件</b>（<code>njexyomi.a</code> 仅 1.5 KB）起步。
+② <b>NJDC 合法性</b> —— 覆盖进去的必须是 iWnn 能解析的 <code>NJDC</code>；格式错会让 iWnn 初始化失败、键盘起不来。
+③ 以上全部为<b>源码 + 静态二进制推导，尚未在实机跑过</b>。
+</div>
+
+<h2>6 · 下一步验证清单</h2>
+
+<div class="callout ok">
+<b>状态更新（v5/v6）—— 这份清单是 v1 写的，四项里三项已完成：</b>
+<ul class="tight" style="margin:8px 0 0">
+  <li>第 1 项 <b>LayeredFS 冒烟</b> → <b>已完成（v5 实机验证通过）</b>：
+    覆盖 <code>njubase3.a</code> 后能打出原版词典里根本没有的词（§6.7-①）。</li>
+  <li>第 2 项 <b>NJDC 结构测绘</b> → <b>已完成（v4）</b>：格式完全解出，读→写往返零差异（§6.6）。</li>
+  <li>第 4 项 <b>缺词规模量化</b> → <b>已完成</b>：已产出 150,000 条词典并与原版逐条对账（§6.6 / §6.7-②）。</li>
+  <li>第 3 项 <b>实机确认可输入集</b> → 仍未做，但优先级已被下面的新任务取代。</li>
+  <li><b>新增最高优先项：</b>① <b>全量简拼包实机确认</b>（4.64 MB 是否吃得下）——
+    <s>简拼冒烟</s> <b>已于 2026-09-27 通过</b>（§6.7-④）；
+    ② 装完 overlay <b>先不重启</b>直接打词，验证「旧句柄释放即生效」的推论；
+    ③ 装 devkitPro 后出 <code>HexDict.nro</code>；④ 解 <code>njexyomi.a</code>（「联想差」的直接落点）。</li>
+</ul>
+</div>
+
+<table>
+  <thead><tr><th style="width:34px" class="num">#</th><th>动作</th><th style="width:96px">成本</th><th style="width:86px">风险</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="num">1</td>
+      <td><b>LayeredFS 覆盖冒烟测试</b>（推荐先做）：在
+        <code>sdmc:/atmosphere/contents/0100000000000805/romfs/</code> 放一个<b>只改 1 字节</b>的
+        <code>Iwnn/ZH/CN/pinyin/GB18030/njexyomi.a</code>，进游戏呼出键盘并切到简体中文拼音。
+        中文候选消失或键盘异常 → 覆盖生效，路线 A 通路打开；毫无变化 → 回到 §5.5 复核 gate①
+        （该进程是否被 <code>override_config.ini</code> 改了键位、或 SD 未识别）。</td>
+      <td><span class="tag t-ok">约 10 分钟</span></td>
+      <td><span class="tag t-ok">仅影响 emuMMC</span></td>
+    </tr>
+    <tr>
+      <td class="num">2</td>
+      <td><b>NJDC 结构测绘</b>：以 <code>njubase1.a</code>（90 KB，最小完整样本）为起点做段划分与索引试探，
+        判断能否在<b>不重排索引</b>的前提下追加记录（追加比重建廉价一个量级）。</td>
+      <td><span class="tag t-mid">数天</span></td>
+      <td><span class="tag t-ok">离线可做</span></td>
+    </tr>
+    <tr>
+      <td class="num">3</td>
+      <td><b>实机确认可输入集</b>：系统语言设为简体中文，用 3~5 个游戏实测 swkbd 实际给出的输入模式
+        （拼音 / 注音 / 仓颉 / 笔画 / 粤拼）与候选行为，量化「联想差」的体感阈值。</td>
+      <td><span class="tag t-ok">1 小时</span></td>
+      <td><span class="tag t-ok">无</span></td>
+    </tr>
+    <tr>
+      <td class="num">4</td>
+      <td><b>缺词规模量化</b>（路线 A 的收益预估）：把 0805/0808 的全部 NJDC 词条导出为文本，
+        与市面词库（Rime / 谷歌拼音）做 diff，算出「游戏词库」缺口的绝对词数。</td>
+      <td><span class="tag t-mid">依赖第 2 项</span></td>
+      <td><span class="tag t-ok">离线可做</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>6.5 · 「能不能插入第三方词典？」（v3 追加实测）</h2>
+
+<div class="callout info">
+<b>一句话：能，但只有一种装法</b> —— <b>覆盖已有的 NJDC 文件</b>（把自己写的词库编成 NJDC），
+<b>不能新增文件、也没有「用户词典」入口</b>。
+</div>
+
+<h3>引擎有这能力，但 Switch 版没开</h3>
+<table>
+  <thead><tr><th style="width:180px">层面</th><th>事实</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>iWnn 引擎</b></td>
+      <td>词典分 8 类：Integrated / Single Kanji / <b>Ancillary Word</b> / <b>User</b> / <b>Learning</b> /
+        Rule / <b>Customized</b> / No Reading Prediction。Android 版 Wnn Keyboard Lab
+        <b>明确支持「追加词典」</b>（<code>/sdcard/wnnlab/</code>）→ 引擎有该能力。</td>
+    </tr>
+    <tr>
+      <td><b>Switch 版 swkbd</b></td>
+      <td><code>main.rodata</code> 里<b>硬编码了完整词典文件名清单</b>：
+        <code>njubase1/2/3.a|.ad1</code>、<code>njtan.a|.ad1</code>、<code>njexyomi.a|.ad1</code>、
+        <code>njcon.a</code>、<code>njcode.a</code>、<code>njcangjie.a</code>、<code>keisei/…</code>、
+        变体 <code>njubase1us.a</code>/<code>pt</code>/<code>br</code>/<code>gb</code>。<br>
+        而 <code>njuser</code>/<code>usrdic</code>/<code>userdict</code>/<code>wdic</code>/
+        <code>learning</code>/<code>njaddon</code> 等 <b>42 个关键词在三段里零命中</b>。<br>
+        → <b>无用户词典入口、无学习词典持久化</b>（这也是 NS 输入法「不记事」的原因）；
+        <b>塞新文件名不会被加载</b>，只能改已有文件。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>好消息：NJDC 是明文词库</h3>
+<p><code>njubase1.a</code>（90,402 B）实测分区，<b>无加密、无压缩</b>：</p>
+<table>
+  <thead><tr><th style="width:170px">区间</th><th>内容</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">0x00–0x54</td><td>NJDC 头，与 GBATEK 的 3DS NJDC 文档<b>字段完全吻合</b>（大端、<code>0x0C = filesize − 0x70</code>、<code>0x10 = 0x54</code>）</td></tr>
+    <tr><td class="mono">0x54–0x47A</td><td>索引 / bucket 表；<code>0x1F8</code> 起为<b>递增 u32 偏移数组</b></td></tr>
+    <tr><td class="mono">0x47A–0x8760</td><td>记录区（定长＋变长混合）</td></tr>
+    <tr><td class="mono">0x8760–0x112E6</td><td><b>读法池</b>（UTF-16BE 明文）：<code>afuhan agenting aibushi shouaichou aidai aierlan…</code></td></tr>
+    <tr><td class="mono">0x112E6–0x146F0</td><td><b>表记池</b>（UTF-16BE 汉字）：直接读出 <code>一下 一个 一些 一人 一件 一份 一位 一体…</code></td></tr>
+    <tr><td class="mono">0x146F0–0x1611E</td><td>位打包表（待解）</td></tr>
+  </tbody>
+</table>
+
+<h3>降低风险的两个细节</h3>
+<ul style="font-size:13.5px;line-height:1.8">
+  <li><b><code>.ad1</code> 的魔数是 <code>NJAD</code></b>（非 NJDC）：内部在 <code>0x28</code> 处
+    再嵌一个完整 NJDC，其头部与主词典<b>逐字节相同</b> → 它是<b>附属 / 变体</b>，不是独立词典。
+    <b>先只覆盖 30 KB 的 <code>.ad1</code>、保留 <code>.a</code> 不动，爆炸半径最小</b>（且可随时删掉文件回滚）。</li>
+  <li><b>已有「变体词典」先例</b>：<code>njubase1us.a</code> / <code>pt</code> / <code>br</code> / <code>gb</code>
+    → 说明<b>同一槽位可以装内容不同的词典</b>，不必与原词典逐字节一致。</li>
+</ul>
+
+<div class="callout ok">
+<b>当时唯一的硬骨头（v4 已突破）：</b>记录 / 索引表的<b>字段语义</b>——
+v3 时「骨架已明、含义未测完」。<b>v4 已全部解出并完成读→写往返自校验，见 §6.6。</b>
+</div>
+
+<h2>6.6 · NJDC 完全解出 + 已生成可用大词库（v4 落地成果）</h2>
+
+<div class="callout ok">
+<b>一句话：格式 100% 解出，往返重建零差异；已生成 150,000 条中文拼音词典，
+原版条目零丢失，全部结构校验通过。</b>（实机冒烟待跑）
+</div>
+
+<h3>NJDC 完整规范（大端，N = 词条数）</h3>
+<table>
+  <thead><tr><th style="width:150px">区段</th><th>结构</th></tr></thead>
+  <tbody>
+    <tr><td class="mono"><b>头部 0x00–0x54</b><br>21 × u32</td>
+      <td><code>"NJDC"</code> / <code>0x04=0x00020000</code> / <code>0x08=0x00050000</code> /
+      <b><code>0x0c = 文件大小 − 112</code></b> / <code>0x10 = 84</code> /
+      <b><code>0x14 = 读法最大字节数</code></b> / <b><code>0x18 = 表记最大字节数</code></b>
+      （UTF-16BE <b>字节</b>数，非字符数——极易写错） / <code>0x1c = 0</code> /
+      <b><code>0x20 = 记录表偏移（恒 1146）</code></b> / <b><code>0x24 = 池偏移 = 0x20 + 10N</code></b> /
+      <code>0x28 = 尾部表偏移</code> / <code>0x2c = 附加区偏移（0 = 无）</code> / <code>0x30 = 112</code> /
+      <code>0x34..0x40 = 0</code> / <b><code>0x44 = 1144</code></b>（索引区结束） /
+      <code>0x48 = 0x4c = 0x00010101</code> / <b><code>0x50 = N</code></b></td></tr>
+    <tr><td class="mono"><b>索引区 0x54–0x47A</b></td>
+      <td>9 × u32 前缀 <code>[0,1,0,0,0,0,0,0,1]</code> ＋ <b>256 × u32 T 表</b>
+      （<code>T[b] = 1 + #{读法首字符 ASCII 字节 ≤ b}</code>，故 <code>T[0]=1</code>、
+      <code>T[255]=N+1</code>，按首字母分桶）＋ <b>2 字节间隙 <code>08 06</code></b></td></tr>
+    <tr><td class="mono"><b>记录表 0x20 起</b><br>10 B / 条 × N</td>
+      <td><code>u8 读法字节长 | u24BE 读法偏移 | u8 表记字节长 | u24BE 表记偏移 | u16 保留=0</code>
+      （偏移相对各自池首）</td></tr>
+    <tr><td class="mono"><b>字符串池 0x24 起</b></td>
+      <td>读法池 ∥ 表记池；每池只收<b>极大串</b>（非任何其它串的子串），按
+      <b>UTF-16BE 字节序升序</b>拼接；被包含串的偏移指向宿主串（共享串取哪次出现是厂商自由度，
+      实测 76~78% 非首次，不影响语义）</td></tr>
+    <tr><td class="mono"><b>尾部表 0x28 起</b></td>
+      <td><code>N × u16</code>（高字节 == 低字节；主流 <code>0x40 | v</code>，<code>v ∈ [0,63]</code>
+      = 词条优先级/词频）＋ 末尾 <b>4 字节 <code>"NJDC"</code></b>；
+      <b>文件大小 == 尾部表偏移 + 2N + 4</b>。变体：<code>njcode</code> 全 <code>0x4000</code>、
+      <code>njubase3</code> 混用 <code>0x8040/0x0000/0xHHHH</code></td></tr>
+  </tbody>
+</table>
+
+<h3>「解出」的判据：读 → 写往返零差异</h3>
+<table>
+  <thead><tr><th style="width:200px">文件</th><th>往返重建结果</th></tr></thead>
+  <tbody>
+    <tr><td><code>njubase1.a</code></td><td><b>除记录表内偏移外 0 字节差异</b>，条目语义 100% 一致</td></tr>
+    <tr><td><code>njubase2.a</code></td><td>同上</td></tr>
+    <tr><td><code>njcode</code> / <code>njtan</code></td><td>语义一致（差异仅尾部表 / 索引变体）</td></tr>
+  </tbody>
+</table>
+<p style="font-size:13px;color:var(--ink3)">记录表偏移的差异来自共享串偏移的等价选择（厂商不总取首次），属规范内自由度。</p>
+
+<h3>生成器与实测产出</h3>
+<table>
+  <thead><tr><th style="width:150px">项目</th><th>原版</th><th>完整版</th><th>轻量版</th></tr></thead>
+  <tbody>
+    <tr><td>条目数</td><td>57,954</td><td><b>150,000</b></td><td>80,000</td></tr>
+    <tr><td>文件大小</td><td>1,606,890 B</td><td>3,943,866 B</td><td>1,842,608 B</td></tr>
+    <tr><td>新增条目</td><td>—</td><td>+87,729</td><td>+17,729</td></tr>
+    <tr><td>原版有条目丢失</td><td>—</td><td><b>0</b></td><td><b>0</b></td></tr>
+    <tr><td>结构校验</td><td>—</td><td><span class="tag t-ok">全部通过</span></td><td><span class="tag t-ok">全部通过</span></td></tr>
+  </tbody>
+</table>
+<p style="font-size:13.5px;line-height:1.8">
+来源构成 = 单字 8,756 ＋ 游戏词表 252 ＋ <b>原版 57,954 全量并入</b> ＋ 常用词 83,038
+（雾凇拼音 <code>rime-ice</code>，MIT）。拼音口径与设备<b>完全一致</b>
+（<code>ü</code> 写作 <code>v</code>：<code>lv/nv/lve/nve</code>），已在设备词典逐条核对。
+</p>
+
+<h3>验证方法</h3>
+<table>
+  <thead><tr><th style="width:130px">侧</th><th>做法</th></tr></thead>
+  <tbody>
+    <tr><td><b>PC 结构</b></td>
+      <td><code>verify.bat</code> 逐项打印 <code>[OK]/[FAIL]</code>：魔数、头部长度、<code>0x20=1146</code>、
+      <code>0x24=0x20+10N</code>、文件大小 <code>=尾部表+2N+4</code>、<code>0x0c=大小−112</code>、
+      <code>0x44=1144</code>、间隙 <code>08 06</code>、T 表可复算、所有记录偏移合法、读法 UTF-16BE 升序、
+      <code>0x14/0x18</code> 一致、尾部表形态、文件尾 <code>NJDC</code>。</td></tr>
+    <tr><td><b>PC 功能</b></td>
+      <td>命中抽查：<code>shalujianta → 杀戮尖塔</code>（<b>原版没有此词，关键判据</b>）、
+      <code>aierdengfahuan → 艾尔登法环</code>、<code>heishenhuawukong → 黑神话悟空</code>、
+      <code>cundang → 存档</code>、<code>lianji → 联机</code>、<code>jisuanjishu → 计算技术</code>；
+      并与原版对账（新增数 / 丢失数 = 0）。</td></tr>
+    <tr><td><b>实机冒烟</b></td>
+      <td>先跑<b>基线</b>（不装 overlay 打 <code>shalujianta</code> 应打不出「杀戮尖塔」）→ 装 overlay 后重测。
+      <b>只要 <code>shalujianta</code> 能出「杀戮尖塔」就说明覆盖生效。</b>
+      ⚠️ Atmosphere 覆盖键默认 <code>L</code> 且 <code>override_by_default=true</code>，
+      <b>开机按住 L 会关闭覆盖</b> → 表现为「完全没生效」，重启时全程不碰手柄。</td></tr>
+  </tbody>
+</table>
+
+<h3>仍未解出 / 残余风险（如实标注）</h3>
+<ul style="font-size:13.5px;line-height:1.8">
+  <li><b><code>.ad1</code>（NJAD）完整语义未解</b>：其 <code>0x28</code> 起内嵌一份与 <code>.a</code>
+    逐字节相同的 84 字节头。若引擎拿它做一致性校验，替换 <code>.a</code> 后可能失败 →
+    备 <code>overlay-with-ad1/</code> 做<b>推测性</b>头部同步，<b>先试 <code>overlay/</code>，不生效再试它</b>。</li>
+  <li><b>尾部表 6bit 值语义是「优先级/词频」推断</b>，非实测确认 → 影响候选<b>排序</b>，不影响能否打出。</li>
+  <li><code>njubase3</code> 附加区（149,352 B）、<code>njtan</code> 4 B/条读音索引区语义未解；
+    生成器走<b>无附加区的干净布局</b>（同 <code>njubase1</code>）。</li>
+  <li><b>候选排序不保证优于原版</b>：采取「不回归」策略——原版条目沿用原优先级，新词按词频映射。</li>
+  <li>繁体（<code>ZH/TW</code>）与粤拼 / 仓颉 / 笔画路径未覆盖，本轮只做简体拼音 <code>ZH/CN/pinyin</code>。</li>
+</ul>
+
+<h2>6.7 · 落地进展：实机验证 · 去重修复 · 简拼（v5/v6 增补）</h2>
+
+<h3>① 实机验证通过（v5，最高等级证据）</h3>
+<p>在真机上覆盖 <code>njubase3.a</code> 后，拼音能打出<b>原版词典里根本没有的词</b>。
+至此「LayeredFS 覆盖词典 title」不再是源码推演，而是<b>已在目标主机跑通</b>。</p>
+<p><b>附带确认</b>：把原版 <code>njubase3</code>（extra 版式、带 662 KB 附加区）<b>整个换成</b>
+干净版式，引擎照常接受 → <b>iWnn 完全按文件自身的头部字段寻址，不要求同槽位文件版式一致</b>。
+这条把原先「先只覆盖 <code>.ad1</code> 以降风险」的保守策略直接判定为<b>不必要</b>。</p>
+
+<h3>② 两个生成器 bug：一个真 bug，一个「骗人的打印」</h3>
+<table>
+  <thead><tr><th style="width:26%">问题</th><th>现象 / 根因 / 修法</th></tr></thead>
+  <tbody>
+    <tr><td><b>真 bug</b><br>4,316 个重复键</td>
+      <td>词条分四组拼装（单字 → 游戏词 → 原版 → 按权重降序），<code>add()</code> <b>没做跨组去重</b>。
+      三组在 <code>(读法, 表记)</code> 层面重叠 4,317 条 —— 如 <code>('a','啊')</code>、
+      <code>('ling','零')</code> 甚至出现 <b>3 次</b>。用户打 <code>ling</code> 时候选里「零」连出三次。
+      四份产物全部中招（同一条拼装路径）。<br>
+      <b>修法</b>：<code>add()</code> 改「<b>首次出现者胜</b>」（保留组间优先序），
+      去重省下的额度<b>自动由常用词补上</b>，上限不浪费 → 实际词数反而 +4,317。</td></tr>
+    <tr><td><b>次生 bug</b><br>打印恒为 <code>-0</code></td>
+      <td>去重计数在<b>并入 rest 之后</b>才计算：<code>len(三组) − len(pick)</code>，
+      而 <code>rest</code> 已把 <code>pick</code> 补到上限 → 相减恒为负 → 被 <code>max(0,·)</code>
+      抹成 <code>0</code>，打印「跨组去重 -0」的<b>假象</b>，差点让人以为修复没生效。<br>
+      <b>修法</b>：计数提到并入 <code>rest</code> <b>之前</b>，正确输出 <code>-4317</code>。
+      修后四份产物 <b>sha256 与修复前逐字节一致</b> → 反证「只是打印错，产物一直是对的」。</td></tr>
+  </tbody>
+</table>
+
+<div class="callout ok">
+  <b>教训（与 §6.6 的「假规范」同源）</b><br>
+  ① 统计量必须在<b>正确的时点</b>采样，否则会打印出一个「永远成立、因而毫无信息量」的值；<br>
+  ② 交叉验证要用<b>独立手段</b>（这次直接解析产物去数重复键），不能只看程序自报。
+</div>
+
+<h3>③ 校验器统一：把「本工程约定」从「规范」里摘出来</h3>
+<p>v5 只修了 <code>.nro</code> 用的 C++ 校验器，<b>用户按 README 直接跑的 Python 版仍留着两条假规范</b>
+（<code>0x20 == 1146</code>、<code>0x0c == 大小 − 112</code>）。后果很实际：README 建议拿原版
+<code>njubase3.a</code> 做对照，而用户一跑就会看到 <code>[FAIL] 0x20=81726</code> ——
+<b>校验器把好文件判成坏文件</b>。现已同步为两层判据，并新增 <code>N == 0</code> 分支
+（<code>njexyomi.a</code> 不再误判）。</p>
+<p>另一条修正同样重要：「尾部表高低字节成对相同」与「读法仅含 a-z」<b>也不是规范</b>，
+只是本工程产物的写法约定。抓出它的样本是原版 <code>njcode.a</code>（记号/小键盘词典）——
+285 条读法<b>全部</b>非字母、尾部表<b>全部</b>不成对，却是个完全正常的文件。
+现两项降级为 <code>[info]</code> 只报告比例：本工程产物恒为 <code>150000/150000</code>，
+<code>njcode</code> 显示 <code>0/285</code>，一眼可辨且不误杀。</p>
+<p><b>回归结果：10 个文件（4 份产物 ＋ 原版 6 本）/ 0 个 FAIL</b>
+（<code>dist/verify-report.txt</code>，523 行；<code>.nro</code> 侧见
+<code>report/njdc_checker_regression.txt</code>）。</p>
+
+<h3>④ 简拼（首字母联想）：<code>sljt</code> → 杀戮尖塔　<span style="font-size:13px;font-weight:400;color:var(--ink3)">★ 已实机验证通过</span></h3>
+<p><b>用户问题：能变成安卓电视搜索那种吗，就是打首字母联想。</b></p>
+<p><b>答：能。2026-09-27 实机验证通过。</b>做法是给多字词<b>额外追加一条「首字母读法」条目</b>，
+与全拼条目并存：</p>
+
+<table>
+  <thead><tr><th style="width:22%">输入</th><th style="width:26%">实测结果</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>sha</code></td><td>只有单字 <span class="tag t-no">正常</span></td>
+      <td>全拼前缀命中 <b>1,827 条</b>候选，目标词被挤出可视区 —— <b>不是覆盖失败</b></td></tr>
+    <tr><td><code>shal</code></td><td><b>杀戮尖塔</b></td><td>候选降到 27 条，目标词露出来</td></tr>
+    <tr><td><code>0000</code></td><td><b>杀戮尖塔</b></td><td>纯数字探针 —— 引擎<b>不校验读法形态</b></td></tr>
+    <tr><td><code>zzzz</code></td><td><b>杀戮尖塔</b></td><td>非音节字母串探针，同样命中</td></tr>
+    <tr><td><code>jt</code> / <code>bkm</code></td><td><b>尖塔</b> / <b>宝可梦</b></td><td>2 字母 / 3 字母简拼</td></tr>
+    <tr><td><code>sljt</code></td><td><b>杀戮尖塔</b> <span class="tag t-ok">★ 目标</span></td><td>目标方案，成功</td></tr>
+  </tbody>
+</table>
+
+<div class="callout ok">
+  <b>两条关键结论</b><br>
+  ① <b>引擎对读法形态零校验。</b>原先最担心的「引擎按音节切分 → 辅音串被丢弃」<b>被实测否定</b>
+  （<code>0000</code>、<code>zzzz</code> 都命中）。这同时<b>反证了 <code>njcode.a</code> 的解读</b> ——
+  那 285 条十六进制码点读法不是特例，而是引擎支持「任意串读法」的正常用法。
+  → <b>推论：任意编码的快捷输入都可行</b>（数字编码、自定义快捷词），是明确的扩展方向。<br>
+  ② <b>大前缀下的「看起来没生效」是排序与候选数量问题，不是覆盖失败。</b>
+  <code>sha</code> 有 1,827 条候选、<code>shal</code> 只剩 27 条 ——
+  <b>判断覆盖是否生效必须用「唯一前缀」</b>，不能用几千条候选的大前缀。
+</div>
+
+<p><b>顺带修掉一个会露馅的问题：简拼串与同词全拼撞车。</b>
+<code>阿呆</code> 全拼 <code>adai</code>、简拼 <code>ad</code> —— 打 <code>ad</code> 时
+全拼前缀与简拼条目<b>各命中一次</b>，「阿呆」在候选里出现两次。
+这与 §6.7-② 修掉的 4,316 重复键是<b>同类问题，只是跨读法</b>。</p>
+<ul style="font-size:13.5px;line-height:1.8">
+  <li><b>判定条件</b>：简拼串是该词<b>「其它读法」</b>的前缀 ⟺ 会重复。
+    （不能用「是任意读法的前缀」—— 那条太宽，会把 <code>sed→塞尔达</code> 误判，
+    因为「塞尔达」自己的读法 <code>saierda</code> 并不以 <code>sed</code> 开头。）</li>
+  <li><b>规模</b>：full 包 60,000 条里 295 条（0.5%）会重复，293 条是 2 字母。
+    几乎全是<b>首字零声母</b>的词（阿X / 按X / 沙盒 <code>shahe</code>）——
+    因为首字拼音只有 <code>a/e/o</code> 一个字母时，简拼前两位正好等于全拼前两位。</li>
+  <li><b>处理</b>：生成时直接丢弃（<code>--abbrev-allow-dup</code> 可关）。
+    <b>零功能损失</b> —— 按定义，被丢的条目其全拼已以该串为前缀、优先级相同 →
+    候选位置不变，用户看到的东西<b>完全一样</b>。丢弃后<b>会重复候选 = 0</b>。</li>
+  <li><b>产物</b>：<code>abbr-test.a</code>（150,297 条 / +297）、
+    <code>abbr-probe.a</code>（150,299 条 / +297＋2 探针）、
+    <code>abbr-full.a</code>（210,000 条 / +60,000，4.64 MB，待实机确认大小）。
+    三份的<b>唯一表记数都与完整版相同</b>（149,030）—— 简拼只加<b>读法入口</b>、不加新词。</li>
+  <li><b>实现要点</b>：字→拼音表<b>从设备自己的 <code>njtan.a</code> 提取</b>
+    （12,873 汉字 / 707 多音字），口径强一致；多音字出多解
+    （「独立游戏」→ <code>dlyx</code>/<code>dlyh</code>）；只对长度 ≥ 2 字的词生成。</li>
+</ul>
+
+<h4 style="margin-top:22px">与「安卓电视搜索」的真实差距（必须说清，否则是误导）</h4>
+<table>
+  <thead><tr><th style="width:20%"></th><th style="width:40%">安卓电视搜索</th><th>本方案</th></tr></thead>
+  <tbody>
+    <tr><td><b>匹配方式</b></td><td>实时模糊匹配（子串 / 错拼 / 多语）</td><td>词典<b>前缀</b>匹配</td></tr>
+    <tr><td><b>排序</b></td><td>按相关性动态算分</td><td>尾部表 6bit 优先级，<b>静态</b>且语义未完全确认</td></tr>
+    <tr><td><b>词库来源</b></td><td>在线、可更新</td><td>本地文件；换库要重启</td></tr>
+    <tr><td><b>首字母联想</b></td><td>原生支持</td><td><b>待实机冒烟</b></td></tr>
+  </tbody>
+</table>
+<p>一句话：<b>「打首字母出候选」有望做到；「像电视搜索那样聪明」做不到</b> ——
+匹配与排序发生在 iWnn 引擎内部（编译在 swkbd 的 <code>main</code> 段里），词典层只能提供数据。</p>
+
+<h3>⑤ <code>.nro</code> 打包：能，但只到「安装器 / 管理器」层</h3>
+<table>
+  <thead><tr><th style="width:40%">能力</th><th style="width:12%">可行性</th><th>依据</th></tr></thead>
+  <tbody>
+    <tr><td>写文件到 <code>atmosphere/contents/…/romfs/</code></td><td><b>能</b></td>
+      <td>就是 SD 上的普通目录，homebrew 有写权限</td></tr>
+    <tr><td>装 / 卸 / 切版本 / 自检 / 一键重启</td><td><b>能</b></td>
+      <td>devkitPro + libnx 标准 homebrew</td></tr>
+    <tr><td>热接管词典加载（不重启即换）</td><td><b>不能</b></td>
+      <td>加载在 <code>fs.mitm</code>（sysmodule）层，<code>.nro</code> 碰不到</td></tr>
+  </tbody>
+</table>
+<p>但源码给出一个<b>可实测的推论</b>：<code>HasSdRomfsContent()</code>（<code>amsmitm_fs_utils.cpp:187</code>）
+<b>实时查 SD、无缓存</b>；layered storage 虽按 <code>program_id</code> 缓存，但 finalizer 线程每 500 ms 扫描，
+引用计数归零先给一次 second chance、下一轮即 <code>erase + delete</code>
+（<code>fsmitm_layered_romfs_storage.cpp:121-137</code>）
+→ <b>只要 swkbd 的旧句柄被释放（关掉键盘再打开），理论上无需重启主机</b>；
+若 swkbd 常驻不释放则仍需重启。这是假设，可实测。</p>
+<p><b>工程现状</b>：<code>nro/</code> 已备齐（Makefile / <code>main.cpp</code> /
+<code>njdc_check.h</code> / <code>gen_embed.py</code> / <code>build.bat</code> / README），
+已把最新两版词典（4,025,516 B ＋ 1,922,644 B）内嵌，<b>PC 侧语法自检零告警、校验器回归
+<code>ALL PASSED</code></b>；<b>只缺 devkitPro 工具链</b>（本机未装）。</p>
+
+<h3>⑥ 候选排序偏差（既有问题，未解，如实标注）</h3>
+<p>抽查时发现（<b>不属本轮 bug</b>，是尾部表语义未解的表现）：</p>
+<pre><code>youxi      → 首选是「有戏」而非「游戏」
+jisuanji   → 首选是「计算技」（生僻词）
+yuanzhoulv → 圆周率  未收录（权重 4880，落在 --limit 150000 截断线外）</code></pre>
+<p>前两条是<b>尾部表 6bit 优先级语义未完全解出</b>导致的静态排序偏差；第三条是<b>上限截断</b>，
+提高 <code>--limit</code> 即可。三条都<b>不影响「能不能打出来」</b>，只影响首屏第一个候选是不是你要的那个。</p>
+
+<h2>7 · 本版推翻的旧结论</h2>
+<table>
+  <thead><tr><th style="width:44%">旧说法（v1）</th><th>实际（本版证据）</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>「swkbd 内没有任何词典数据，<b>也没有中文输入</b>；语言表只有 16 种西文 ＋ 4 种日文」</td>
+      <td><span class="tag t-no">错</span> <code>message/CNzh/swkbd.msbt</code> 明确列出
+        <b>简体中文 / 繁體中文 / 한국어</b>；引擎是 <b>iWnn 1.16.2</b>；中文词典 17.25 MB 位于 title
+        <code>0100000000000805</code>。</td>
+    </tr>
+    <tr>
+      <td>「③ 没有游戏词库 —— <b>没有词库可换，因为它本来就没有</b>」</td>
+      <td><span class="tag t-no">错</span> 词库是独立 title 的独立 RomFS 文件，落点真实存在
+        （限制只在格式是私有 <code>NJDC</code>）。</td>
+    </tr>
+    <tr>
+      <td>「② 联想功能不行 —— <b>不可改</b>」</td>
+      <td><span class="tag t-mid">过强</span> 数据侧可扩充（<code>njtan.a</code> / <code>njubase*.a</code>）；
+        只有「模型级」改进不可做。</td>
+    </tr>
+    <tr>
+      <td>「swkbd 的 RomFS 只有 629 KB 且无词典 → 故无词典」</td>
+      <td><span class="tag t-no">推理跳跃</span> swkbd 的 RomFS <b>本就不是</b>词典的存放位置。</td>
+    </tr>
+    <tr>
+      <td>工具枚举标注：<code>crypt_type = 3 → BKTR</code></td>
+      <td><span class="tag t-no">标注错</span> 正确为 <code>1=NONE / 2=XTS / 3=CTR / 4=BKTR</code>。
+        swkbd 的 section 就是 plain <b>CTR</b> —— 这正解释了为何 CTR 解密一直正确。</td>
+    </tr>
+    <tr>
+      <td><code>FSAR</code> magic 被读作字体归档</td>
+      <td><span class="tag t-no">误判</span> 它是 <code>sound/swkbd.bfsar</code>
+        （<b>音效</b>归档）；swkbd 的字体来自 <code>nn::font</code>。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>8 · 方法论与可复现性</h2>
+
+<div class="grid2">
+  <div>
+    <h3>解密链路（全部移植自 hactool 源码，非猜测）</h3>
+    <table>
+      <tbody>
+        <tr><th style="width:118px">头部</th><td>前 <code>0xC00</code> AES-XTS，tweak = BE(sector)，sector 从 0 起</td></tr>
+        <tr><th>section 偏移</th><td><code>media_start × 0x200</code>，<b>不加 0xC00</b></td></tr>
+        <tr><th>key index</th><td><code>max(0x206, 0x220) − 1</code> ← 最初解不开的主因</td></tr>
+        <tr><th>key area</th><td><code>AES-ECB-Dec(key_area_key_&lt;name&gt;_&lt;idx&gt;, …)</code></td></tr>
+        <tr><th>data key</th><td>固定 <code>decrypted_key_area[2]</code></td></tr>
+        <tr><th>CTR IV</th><td><code>reverse(section_ctr[0:8]) ∥ BE(offset&gt;&gt;4)</code>（双段拼接）</td></tr>
+        <tr><th>IVFC 头</th><td>FS header <code>+0x08</code>；<code>level_headers[i]</code> 在 <code>+0x10 + i*0x18</code></td></tr>
+        <tr><th>RomFS 定位</th><td><code>romfs_offset = level_headers[5].logical_offset</code></td></tr>
+        <tr><th>NSO 分段</th><td><b>单块原始 LZ4</b>（整段一次解压），无 64K 分块链、无 8 字节前缀</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>已踩过并已修正的坑</h3>
+    <ul class="tight">
+      <li><b>Yaz0 没有结束标记</b>。<code>00 00</code> 是合法回引用（dist=1，重复上一字节 18 次）；
+        误判为 EOF 会把 41 条流截断到几十字节。</li>
+      <li><b>PFS0 条目布局因固件而异</b>。22.x 的 system title 用 <b>0x18 字节 / 三个 u64</b>，
+        老版 hactool 是 0x10 字节 / 四个 u32。需按「entry0.offset==0 且 entry1.offset==entry0.size」自动判定。</li>
+      <li><b>RomFS 的 <code>parent/child/sibling/file</code> 是字节偏移不是索引</b>；
+        且区域顺序不固定（0805 实际是 header → data → …meta）。</li>
+      <li><b>SARC 节点从 <code>SFAT + header_size(0x0C)</code> 起</b>，不是 <code>+8</code>。</li>
+      <li><b>section 数据不以 <code>PFS0</code>/<code>IVFC</code> magic 开头</b> ——
+        FS superblock 在 NCA 头里，不能拿「magic 在 offset 0」当解密成功判据。</li>
+      <li>用 <code>META</code> 找 npdm 时，<b>代码段里也有 <code>META</code> 字节</b>会误命中；
+        必须走 PFS0 文件表定位 <code>main.npdm</code>。</li>
+      <li><b>别把「某类文件的特征值」当成「格式规范」</b>。<code>0x20==1146</code> / <code>0x44==1144</code> /
+        <code>0x0c==大小−112</code> 只是<b>干净版式</b>那一类的特征 —— 照抄进校验器，会把原版
+        <code>njubase3</code>（81726）、<code>njtan</code>（57895）、<code>njexyomi</code>（头长 60）
+        全部误判为坏文件。通用关系只有 <code>0x0c = 文件大小 − 28 − 头部长度</code>。
+        <b>校验器坏掉比文件坏掉更危险</b>：用户看到 FAIL 第一反应是「文件坏了」。</li>
+      <li><b>「本工程写法」必须与「规范」分开</b>。尾部表成对相同、读法全 a-z 都是本工程的写法约定，
+        原版 <code>njcode</code>（记号词典，285 条读法全非字母）两项全不满足、却完全正常
+        → 校验器对这类项应只报告比例、不判 FAIL。</li>
+      <li><b>统计量要在正确的时点采样</b>。去重计数放在填充之后计算，<code>len(三组) − len(pick)</code>
+        恒为负、被 <code>max(0,·)</code> 抹成 0，打印出「跨组去重 -0」的假象，
+        掩盖了真实的 <b>4,317 条重复</b>（用户打 <code>ling</code> 时「零」连出三次）。
+        交叉验证要换独立手段（直接解析产物去数重复键），不能只看程序自报。</li>
+    </ul>
+  </div>
+</div>
+
+<h3>工具链</h3>
+<table>
+  <thead><tr><th style="width:170px">脚本</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">nca.py</td><td>NCA 头部 XTS 解密、FS header / FsEntry 解析</td></tr>
+    <tr><td class="mono">index_fw.py</td><td>固件包全量索引（238 NCA 头部 → titleId / kg / 分区）</td></tr>
+    <tr><td class="mono">dump_nca.py</td><td>按 hactool 参数解密任意 section（含正确的 CTR IV 构造）</td></tr>
+    <tr><td class="mono">nso_dump.py</td><td>ExeFS → main → NSO0 头解析 ＋ 单块 LZ4 分段解压</td></tr>
+    <tr><td class="mono">nca_romfs.py</td><td>NCA → 解密 section → IVFC 层表 → RomFS 文件树遍历 / 提取</td></tr>
+    <tr><td class="mono">romfs_dump.py</td><td>Yaz0 解压（无终止符实现）＋ SARC 解析</td></tr>
+    <tr><td class="mono">id_applets.py</td><td>批量读 main.npdm 的 META 名 → 识别全部 applet（swkbd / qlaunch / …）</td></tr>
+    <tr><td class="mono">scan_data.py</td><td>全 Data title 普查：解密 section0 ＋ 关键词命中 ＋ 名称提取</td></tr>
+    <tr><td class="mono">nso_scan.py</td><td>扫 NSO 三段：关键词字符串 ＋ title id 立即数（LE/BE）—— §5.5 的证据来源</td></tr>
+  </tbody>
+</table>
+
+<p style="font-size:13px;color:var(--muted);margin-top:10px">
+另外，§5.5 的源码比对基于 Atmosphere 官方仓库（<code>github.com/Atmosphere-NX/Atmosphere</code>，master 分支）
+的 <code>fs_mitm_service.cpp</code>、<code>fsmitm_romfs.cpp</code>、<code>fsmitm_layered_romfs_storage.cpp</code>、
+<code>amsmitm_fs_utils.cpp</code>、<code>cfg_override.cpp</code> 及
+<code>cfg_override.board.nintendo_nx.inc</code>；已存档于工程 <code>refs/ams/</code> 以便复核。
+</p>
+
+<footer>
+  <p><b>口径说明：</b>本报告全部结论基于实机 SD 卡备份 <code>F:/NSbackup/20260927/</code>（固件包
+  <code>AMS-22.5.0/</code> 238 个 NCA ＋ 实机 Lockpick 导出的 <code>prod.keys</code>），
+  纯离线解析，未改动主机、未联网。FTP 副本与本地固件包已逐字节比对一致。</p>
+  <p><b>已知限制（v6 更新）：</b>① 「LayeredFS 覆盖词典 title」已由<b>官方源码 + 静态二进制</b>推导为成立
+  （§5.5），并已于 v5 <b>实机跑通</b>（§6.7-①）—— 覆盖 <code>njubase3.a</code> 后打得出版原版没有的词；
+  残余未验项只剩「applet 内存预算是否够重建 4 MB 级别的 romfs 索引」（中文词典 romfs 约 18 MB，
+  而 applet 预算是 32 MB，内存应不是瓶颈）；
+  ② <code>NJDC</code> 已完全解出（§6.6），产物经结构校验 ＋ 原版对账（重复 0 / 丢失 0），
+  v6 修掉了 <b>4,316 个重复键</b>（§6.7-②）；
+  ③ <b>简拼（首字母联想）已于 2026-09-27 实机验证通过</b>（§6.7-④）——
+  连纯数字 <code>0000</code> 与非音节串 <code>zzzz</code> 都能命中，
+  说明引擎对读法形态零校验；<b>待验的是全量简拼包（4.64 MB）能否被引擎接受</b>；
+  ④ <code>.ad1</code>（NJAD）语义、尾部表 6bit 值语义仍未定论 → 影响候选<b>排序</b>不影响能否打出；
+  ⑤ 本报告描述的是<b>固件 22.5.0</b> 的实况，其他版本可能有差异。</p>
+  <p><b>下一步（按优先级）：</b>① 全量简拼包实机确认（4.64 MB 是否吃得下，打 <code>sljt</code> / <code>aedfh</code>）；
+  ② 装完不重启直接打词，验证「旧句柄释放即生效」推论；
+  ③ 装 devkitPro 后 <code>nro/build.bat</code> 出 <code>HexDict.nro</code>；
+  ④ 解 <code>njexyomi.a</code>（痛点②「联想差」的直接落点）。</p>
+  <p><b>合规边界：</b>本文为对自有设备固件的技术分析，用于个人设备的能力评估与合法改造，
+  不提供任何盗版资源、密钥获取途径或绕过授权的方法。修改系统组件存在无法启动的风险，
+  请自行承担并先完成完整 NAND / SD 备份。</p>
+</footer>
+
+</div>
+</body>
+</html>

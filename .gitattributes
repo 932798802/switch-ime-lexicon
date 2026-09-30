@@ -1,0 +1,15 @@
+# 统一换行符，避免跨平台 diff 噪声
+* text=auto eol=lf
+
+# Windows 批处理必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制（避免 git 尝试做文本 diff）
+*.a     binary
+*.nro   binary
+*.elf   binary
+*.zip   binary
+*.nca   binary
+*.png   binary
+*.exe   binary

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>swkbd 技术侦察报告 · NS 输入法可行性</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1a1d24; --ink2:#4a5160; --ink3:#858c9a;
+    --line:#e3e6ec; --accent:#2b6cb0; --ok:#1f7a4d; --warn:#b7791f; --bad:#b53b3b;
+    --mono:"Cascadia Mono","Consolas","SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 28px 80px}
+  header{border-bottom:3px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+  h1{margin:0 0 10px;font-size:30px;letter-spacing:-.3px;line-height:1.3}
+  .sub{color:var(--ink2);font-size:14px}
+  .sub b{color:var(--ink)}
+  h2{font-size:20px;margin:44px 0 16px;padding-left:12px;border-left:5px solid var(--accent);line-height:1.4}
+  h3{font-size:16px;margin:26px 0 10px;color:var(--ink)}
+  p{margin:10px 0}
+  code,.mono{font-family:var(--mono);font-size:13px;background:#eef1f6;padding:2px 6px;
+       border-radius:4px;color:#243}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.65;background:#1e232b;color:#d7dee8;
+      padding:16px 18px;border-radius:8px;overflow-x:auto;margin:12px 0}
+  pre .k{color:#7fd1a8} pre .c{color:#7d8797} pre .w{color:#e8b96b} pre .r{color:#e88787}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--card);
+        box-shadow:0 1px 3px rgba(20,30,50,.06);border-radius:8px;overflow:hidden}
+  th{background:#eef1f6;text-align:left;padding:10px 13px;font-weight:600;font-size:13px;
+     color:var(--ink2);border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 13px;border-bottom:1px solid #f0f2f6;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.mono,th.mono{font-family:var(--mono);font-size:12.5px}
+  .grid{display:grid;gap:14px}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+  .card{background:var(--card);border-radius:10px;padding:16px 18px;
+        box-shadow:0 1px 3px rgba(20,30,50,.07);border:1px solid #eceff4}
+  .card .n{font-size:26px;font-weight:700;line-height:1.2;letter-spacing:-.5px}
+  .card .l{font-size:12.5px;color:var(--ink3);margin-top:4px}
+  .card .d{font-size:12.5px;color:var(--ink2);margin-top:8px}
+  .tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;
+       font-weight:600;letter-spacing:.2px}
+  .t-ok{background:#e3f5ea;color:var(--ok)}
+  .t-warn{background:#fdf3e0;color:var(--warn)}
+  .t-bad{background:#fbeaea;color:var(--bad)}
+  .t-info{background:#e5eefb;color:var(--accent)}
+  .note{background:#fdf7e8;border-left:4px solid var(--warn);padding:12px 16px;
+        border-radius:0 8px 8px 0;margin:14px 0;font-size:13.5px}
+  .note.bad{background:#fdeeee;border-color:var(--bad)}
+  .note.ok{background:#eaf7ef;border-color:var(--ok)}
+  .note.info{background:#eaf1fb;border-color:var(--accent)}
+  .tree{font-family:var(--mono);font-size:12.5px;line-height:1.85;background:var(--card);
+        border-radius:10px;padding:18px 20px;border:1px solid #eceff4;overflow-x:auto}
+  .tree .dir{color:var(--accent);font-weight:700}
+  .tree .hl{background:#fff5d6;border-radius:3px;padding:0 3px}
+  .tree .sz{color:var(--ink3)}
+  .bar{height:7px;border-radius:4px;background:var(--accent);display:inline-block;vertical-align:middle}
+  ul{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  .kv{font-size:13px}
+  .kv b{color:var(--ink2);font-weight:600}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+         color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>swkbd 技术侦察报告</h1>
+  <div class="sub">
+    目标：<b>Nintendo Switch 输入法改造可行性</b>　·　
+    titleId <code>0100000000001008</code>　·　固件 <b>22.5.0</b>（Atmosphere 1.11.2 / emuMMC）<br>
+    数据源：实机 SD 全量备份 <code>F:/NSbackup/20260927/</code> ＋ FTP <code>192.168.2.122:5000</code> ＋ 实机 <code>prod.keys</code>　·　
+    方式：纯离线解析 NCA　·　2026-09-27
+  </div>
+</header>
+
+<h2>0 · 核心结论</h2>
+<div class="grid g4">
+  <div class="card">
+    <div class="n" style="color:var(--bad)">0 个</div>
+    <div class="l">swkbd 内含有的词典数据</div>
+    <div class="d">RomFS 47 个文件与 <code>main</code> 3.2 MB 代码中，均无词表 / 拼音 / 汉字表</div>
+  </div>
+  <div class="card">
+    <div class="n" style="color:var(--bad)">不支持</div>
+    <div class="l">中文输入能力</div>
+    <div class="d">语言表仅 16 种西文布局 ＋ 4 种日文布局，无中文、无韩文</div>
+  </div>
+  <div class="card">
+    <div class="n" style="color:var(--warn)">1 / 3</div>
+    <div class="l">三痛点中理论可改的数量</div>
+    <div class="d">仅「按键位置」有落点，且需重度工具链</div>
+  </div>
+  <div class="card">
+    <div class="n" style="color:var(--ink2)">3.85 MB</div>
+    <div class="l">swkbd NCA 体积构成</div>
+    <div class="d">ExeFS 3.22 MB（其中 <code>main</code> 3.21 MB）＋ RomFS 629 KB</div>
+  </div>
+</div>
+<div class="note bad">
+  <b>最关键的一条：</b>swkbd 不是「一个输入法」，它只是一个<b>输入界面</b>。
+  联想与候选词的<u>代码框架</u>存在（<code>KeyboardPredict</code>、<code>_Candidate</code>），但<b>不含任何词条数据</b>——
+  候选词只能来自调用方游戏经 <code>KeyboardConfig.UserDictionary*</code> 传入，或用户自己的历史词典。
+</div>
+
+<h2>1 · 数据来源（全部实机，非模拟器）</h2>
+<table>
+  <tr><th>来源</th><th class="mono">路径</th><th>说明</th></tr>
+  <tr><td>SD 卡全量备份</td><td class="mono">F:/NSbackup/20260927/</td><td>184 GB，含 <code>emuMMC/SD00/eMMC/</code> 完整 NAND</td></tr>
+  <tr><td>固件包</td><td class="mono">…/AMS-22.5.0/</td><td>238 个 NCA</td></tr>
+  <tr><td>FTP 副本</td><td class="mono">sdmc:/AMS-22.5.0/</td><td>与本地<b>同一份</b>（已逐字节比对）</td></tr>
+  <tr><td>密钥</td><td class="mono">switch/prod.keys</td><td>231 项，实机 Lockpick 导出；与另一下载版<b>逐字节一致</b></td></tr>
+</table>
+
+<h2>2 · 已验证：emuMMC raw NAND 不可直接解析</h2>
+<table>
+  <tr><th>区域</th><th>状态</th><th>证据</th></tr>
+  <tr><td class="mono">LBA 0–33（MBR + GPT）</td><td><span class="tag t-ok">明文</span></td><td>成功解出 11 个分区（SYSTEM 2684 MB / USER 27917 MB）</td></tr>
+  <tr><td class="mono">PRODINFO</td><td><span class="tag t-bad">密文</span></td><td>该分区本身加密，属正常</td></tr>
+  <tr><td class="mono">SAFE / SYSTEM / USER 头部</td><td><span class="tag t-bad">密文</span></td><td>4 KB 熵 5.90，非明文 FAT 引导扇区</td></tr>
+  <tr><td class="mono">SYSTEM 分区末尾扇区</td><td><span class="tag t-info">全 0</span></td><td>未写入区域未加密</td></tr>
+</table>
+<div class="note">
+  <b>判定依据：</b>SYSTEM 与 USER 分区的头 32 字节<b>完全相同</b>，说明存在按「分区内扇区号」做 tweak 的逐扇区加密，
+  而未写入扇区保持全 0。这既非原始 eMMC 明文（否则可直接读 FAT），也非全盘加密。<br>
+  <b>结论：</b>走 NAND raw 提取系统 title 的路不通（需 per-console 密钥，而 PRODINFO 本身也是密的）。
+  <b>可行路径是固件包</b>——它的 NCA 只受 NCA 层加密，与分区加密无关。
+</div>
+
+<h2>3 · 已验证：NCA 解密链路（本次打通）</h2>
+<p>本机无 hactool，全部自研实现。<b>所有参数以 hactool 源码为准</b>（<code>nca.c</code> / <code>nca.h</code> / <code>utils.h</code> / <code>aes.c</code>），不靠猜测。</p>
+<table>
+  <tr><th>项</th><th>正确做法</th><th>踩过的坑</th></tr>
+  <tr><td>头部解密</td><td>前 <code>0xC00</code> 字节整体 AES-XTS，tweak = BE(sector)，sector 从 0 起</td><td>曾误以为 magic 在文件 <code>0x200</code></td></tr>
+  <tr><td><code>media_to_real</code></td><td class="mono">block × 0x200（不加 0xC00）</td><td>多加 0xC00 导致末段越界</td></tr>
+  <tr><td>section 偏移</td><td>FS header 在 header 块内 <code>0x400 + i×0x200</code>；section 数据区<b>不含</b> FS header</td><td>曾把数据区开头当 <code>PFS0</code> magic，据此误判「解不开」</td></tr>
+  <tr><td><b>key index</b></td><td class="mono">max(0x206, 0x220) − 1</td><td><b>直接用 0x220 会差一代 —— 最初解不开的主因</b></td></tr>
+  <tr><td>key area</td><td class="mono">AES-ECB-Dec(key_area_key_&lt;name&gt;_&lt;idx&gt;, encrypted_keys[4][0x10])</td><td>曾把派生方向的 DEC 写成 ENC</td></tr>
+  <tr><td>data key</td><td class="mono">固定取 decrypted_key_area[2]（CRYPT_CTR）</td><td>—</td></tr>
+  <tr><td><b>CTR IV</b></td><td class="mono">reverse(section_ctr[0:8]) ∥ BE(section_offset ≫ 4)</td><td><b>双段拼接，任何单一猜测都命中不了</b></td></tr>
+  <tr><td>CTR 递增</td><td>128 位<b>大端</b>计数器</td><td>—</td></tr>
+</table>
+<div class="note ok">
+  <b>关键推论：</b>swkbd 的 <code>0x220 = 0x16</code> → key index <code>0x15</code> → 用
+  <code>key_area_key_application_15</code>。而这份实机 keyset <b>恰好覆盖到 <code>_15</code></b>（没有 <code>_16</code>），
+  所以 swkbd <b>可以解开</b>——不需要 <code>master_key_16</code>。
+</div>
+
+<h2>4 · 已验证：swkbd 的文件构成</h2>
+<table>
+  <tr><th>项</th><th>值</th></tr>
+  <tr><td>NCA 文件</td><td class="mono">c65a992ef0d3b7c3e5fd1daecb63c6b0.nca</td></tr>
+  <tr><td>NCA 大小</td><td class="mono">3,848,192 B</td></tr>
+  <tr><td>key generation</td><td class="mono">0x220 = 0x16（0x206 = 2）</td></tr>
+  <tr><td>kaek_index</td><td class="mono">0（application）</td></tr>
+</table>
+<h3>ExeFS（PFS0）3,215,872 B —— 只有 2 个文件</h3>
+<pre><span class="k">main</span>        3,207,722 B    <span class="c">← 全部代码</span>
+<span class="k">main.npdm</span>       1,316 B    <span class="c">← 元数据</span></pre>
+<div class="note bad">
+  <b>前版错误更正：</b>此前报告称「ExeFS 629 KB / RomFS 3.2 MB，资源占 83%」——<b>完全反了</b>。
+  实际是 <b>ExeFS 3.22 MB / RomFS 629 KB</b>。据此推出的「词典很可能是可替换资源文件」这一前提不成立。
+</div>
+
+<h2>5 · 已验证：RomFS 完整文件树（47 项 / 542,852 B）</h2>
+<div class="tree">
+<span class="dir">common/agl/</span>    agl_resource_min.Nin_Nx_NVN.release.sarc.szs            <span class="sz">16,252 B</span>
+<span class="dir">common/lyt/</span>    CtrlDefaultAnimTable.xml                                <span class="sz">5,014 B</span>
+<span class="dir">common/sead/</span>   primitive_renderer/primitive_drawer_nvn_shader.bin      <span class="sz">7,168 B</span>
+<span class="dir">common/shader/</span> VarietyOceanShader_Nx.arc.szs                           <span class="sz">42,516 B</span>
+<br>
+<span class="dir">lyt/</span><span class="hl">50on.szs</span>                                                       <span class="sz">22,035 B</span>  <span class="c">← 日文 50 音布局</span>
+<span class="dir">lyt/</span><span class="hl">Numeric.szs</span>                                                    <span class="sz">13,893 B</span>
+<span class="dir">lyt/</span><span class="hl">Qwerty.szs</span>                                                     <span class="sz">25,174 B</span>  <span class="c">← QWERTY 布局</span>
+<span class="dir">lyt/</span><span class="hl">Sign.szs</span>                                                       <span class="sz">21,154 B</span>
+<span class="dir">lyt/</span><span class="hl">Swkbd.szs</span>                                                      <span class="sz">27,081 B</span>
+<span class="dir">lyt/</span><span class="hl">common.szs</span>                                                     <span class="sz">33,134 B</span>
+<br>
+<span class="dir">message/CNzh/</span>   common.msbt.szs                                         <span class="sz">4,535 B</span>
+<span class="dir">message/CNzh/</span>   swkbd.msbt.szs                                          <span class="sz">1,463 B</span>
+<span class="c">…（共 16 种语言 × common + swkbd ＝ 32 个 msbt：CNzh / CNzhT / EUde / EUen / EUes /
+   EUfr / EUit / EUnl / EUpt / EUru / JPja / KRko / TWzh / USen / USes / USfr / USpt）</span>
+<span class="dir">message/</span>       Ocean.msbp.szs                                          <span class="sz">3,603 B</span>
+<br>
+<span class="dir">sound/</span>         swkbd.bfsar                                            <span class="sz">180,796 B</span>
+<span class="dir">sound/</span>         swkbd_action.bksnd                                      <span class="sz">39,124 B</span>
+<span class="dir">sound/</span>         swkbd_event.bksnd                                           <span class="sz">72 B</span>
+<span class="dir">sound/</span>         swkbd_module.bksnd                                       <span class="sz">3,925 B</span>
+</div>
+<table>
+  <tr><th>目录</th><th>内容</th><th>性质</th></tr>
+  <tr><td class="mono">common/agl·shader·sead</td><td>AGL 图形库、NVN 着色器、sead UI 库</td><td>纯渲染资源</td></tr>
+  <tr><td class="mono"><b>lyt/</b></td><td><b>键盘布局</b>（Qwerty / 50on / Numeric / Sign / Swkbd / common）</td><td><span class="tag t-warn">痛点①唯一落点</span></td></tr>
+  <tr><td class="mono">message/&lt;16语言&gt;/</td><td>UI 文本表（msbt）</td><td><span class="tag t-bad">纯标签，无词典</span></td></tr>
+  <tr><td class="mono">sound/</td><td>按键音效</td><td>—</td></tr>
+</table>
+<p class="kv"><b>格式已验证：</b><code>.szs</code> ＝ <b>Yaz0 压缩的 SARC 归档</b>；<code>.msbt</code> ＝ <code>MsgStdBn</code> UTF-16 文本表。</p>
+
+<h3>5.1 中文文本表实测内容 —— 50 条，全是 UI 标签</h3>
+<pre><span class="c">message/CNzh/swkbd.msbt：</span>
+空格 / OK / 换行 / 确定
+QWERTY / AZERTY / QWERTZ / QZERTY
+English (US) / Français / Deutsch / Italiano / Nederlands / Português / Русский
+<span class="w">日本語　ローマ字入力 / 日本語　50音（横並び・左から・右から）</span>
+符号 / 选择键盘 / 查看输入的文字 / 大写 / 大写锁定 / 小写 / 输入 / 退出 / 关闭
+
+<span class="c">message/CNzh/common.msbt（171 条）：确定 / 取消 / 下一步 / 返回 / 初始化 / 断开 / 重新启动 …</span></pre>
+<div class="note bad">
+  <b>关键：</b>语言选择列表 ＝ <b>16 种西文布局 ＋ 4 种日文布局</b>，<b>没有中文、没有韩文</b>。<br>
+  即：swkbd 的<b>中文界面是有的，但中文输入能力不存在</b>。
+</div>
+
+<h2>6 · 已验证：<code>main</code> 里也没有词典</h2>
+<table>
+  <tr><th>检测</th><th>结果</th><th>判读</th></tr>
+  <tr><td>整体熵</td><td class="mono">6.99</td><td>编译代码</td></tr>
+  <tr><td>UTF-16 CJK 连续长度</td><td class="mono">runs=259,949　mean=<b>1.22</b><br>1:220304 / 2:29130 / 3:7297 / 4:1822</td><td><b>几何衰减 ＝ 随机噪声</b>（真实词典会有大量 2–4 字 run）</td></tr>
+  <tr><td>UTF-8 CJK 连续长度</td><td class="mono">runs=390　max=2　≥3 的 = <b>0</b></td><td>无中文串</td></tr>
+  <tr><td>你好 / 中文 / 输入 / 选择 / 键盘 / 候选 / 联想</td><td class="mono">UTF-8 与 UTF-16 <b>全为 0</b></td><td>无中文词表</td></tr>
+  <tr><td>zhong / nihao / zhongguo / shuru / hanzi</td><td class="mono">全为 0</td><td>无拼音表</td></tr>
+</table>
+<h3>main 里确实存在的相关符号（「有代码，无数据」）</h3>
+<pre><span class="k">D:\home\jenkins\workspace_slave\release_22NUP\app\swkbd\rom\NX64\</span>   <span class="c">← 构建路径</span>
+_ZN2nn2ro6detail15g_pAutoLoadListE                                  <span class="c">← nn::ro SDK</span>
+nn::swkbd::   nn::atk::detail   guiKeyInputManager::update()
+<span class="w">KeyboardPredict</span>          <span class="c">← 联想 / 预测模块</span>
+<span class="w">_Candidatej  Common_Enter_ConfirmCandidat</span>   <span class="c">← 候选词 UI</span>
+<span class="w">SwkbdAddKeytop_USFrench  LayoutKeyTopBase</span>   <span class="c">← 键帽</span>
+N2nn4font12ScalableFont  font_Buildin  LazyFontPane                 <span class="c">← 字体</span>
+nvnWindowBuilderSetTextures / GROUP_KSND / sead::MainThread         <span class="c">← NVN / KSND / sead</span></pre>
+
+<h2>7 · 本次推翻的前版结论</h2>
+<table>
+  <tr><th>前版说法</th><th>实际</th><th>影响</th></tr>
+  <tr><td>ExeFS 629 KB / RomFS 3.2 MB，资源占 83%</td><td><b>ExeFS 3.22 MB / RomFS 629 KB</b></td><td>资源侧「低成本改造」前提<b>不成立</b></td></tr>
+  <tr><td>固件 7.0.0 起内置中文 IME（注音/仓颉/速成/拼音）</td><td><b>本固件 swkbd 无任何中文输入布局与词典</b></td><td>中文方案需重新设计</td></tr>
+  <tr><td>「缺游戏词库」可能有低成本落点</td><td><b>无词库文件可替换</b></td><td>该落点不存在</td></tr>
+  <tr><td>数据源 <code>F:/NSbackup/原文件/</code></td><td>已废弃，改用实机 SD 全量备份 ＋ FTP</td><td>—</td></tr>
+</table>
+
+<h2>8 · 三痛点可改性判定</h2>
+<table>
+  <tr><th>痛点</th><th>判定</th><th>依据</th><th>成本</th></tr>
+  <tr>
+    <td><b>① 按键位置不好</b></td>
+    <td><span class="tag t-warn">理论可改，工程很重</span></td>
+    <td>布局在 <code>lyt/*.szs</code>（Yaz0+SARC+bflyt 二进制 UI 格式），可 LayeredFS 替换</td>
+    <td>需 Yaz0 编码器 ＋ SARC 打包 ＋ bflyt 编辑器（SwitchLayoutEditor 量级）＋ 实机回归</td>
+  </tr>
+  <tr>
+    <td><b>② 联想功能不行</b></td>
+    <td><span class="tag t-bad">不可改</span></td>
+    <td>联想逻辑编译在 <code>main</code> 内；无语言模型，只有用户历史词典</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><b>③ 没有游戏词库</b></td>
+    <td><span class="tag t-bad">无可换之物</span></td>
+    <td>swkbd 无任何词典数据（RomFS 与 main 均已证实）</td>
+    <td>—</td>
+  </tr>
+</table>
+<div class="note">
+  <b>额外事实：</b>swkbd <b>不支持中文输入</b>。用户「用起来很难受」的感受，本质是「连中文输入都没有」。
+</div>
+
+<h2>9 · 第三方输入法路线可行性</h2>
+<table>
+  <tr><th>路线</th><th>结论</th><th>硬约束</th></tr>
+  <tr>
+    <td>sysmodule 做 am 层 mitm</td>
+    <td><span class="tag t-warn">只能改参数，造不出输入法</span></td>
+    <td>appletAE 的 Open*Proxy 命令<b>对 sysmodule 不可用</b>，无法代替游戏发起 swkbd 调用</td>
+  </tr>
+  <tr>
+    <td>LayeredFS 替换 swkbd 本体</td>
+    <td><span class="tag t-ok">唯一能交付真输入法的路</span></td>
+    <td>工作量数人月；swkbd 崩溃 → <b>全系统键盘失效</b></td>
+  </tr>
+  <tr>
+    <td>零开发替代</td>
+    <td><span class="tag t-info">先做实测</span></td>
+    <td>改系统语言 ＋ 实测目标游戏的实际可输入集，受调用方 <code>KeyboardConfig</code> 限制</td>
+  </tr>
+</table>
+<p class="kv"><b>先例：</b>uLaunch（开源重写 qlaunch，titleId <code>0100000000001000</code>，配套 uSystem / uMenu / uLoader / uManager、Pixie / Plutonium UI 库）。</p>
+
+<h2>10 · 工程工具清单</h2>
+<table>
+  <tr><th>工具</th><th>作用</th></tr>
+  <tr><td class="mono">nca.py</td><td>NCA 头部 XTS 解密、FsEntry / FS header 解析</td></tr>
+  <tr><td class="mono">index_fw.py</td><td>本地固件包全量索引（批量解头部、定位 titleId）</td></tr>
+  <tr><td class="mono">ftp_fwhdr.py / ftp_probe.py</td><td>经 FTP 只拉 NCA 头部做索引 / DBI FTP 目录探测</td></tr>
+  <tr><td class="mono">nand.py / probe_entropy.py</td><td>emuMMC raw NAND 访问层（GPT＋FAT32）/ 明密文区域诊断</td></tr>
+  <tr><td class="mono">verify_keys.py</td><td>prod.keys 内部自洽性审计</td></tr>
+  <tr><td class="mono">decrypt2.py / dump_nca.py</td><td>按 hactool 参数解密 section（<b>正确版</b>）</td></tr>
+  <tr><td class="mono">hunt.py / pin_key.py / crib_check.py</td><td>参数穷举与已知明文校验（定位 bug 用）</td></tr>
+  <tr><td class="mono">romfs_auto.py</td><td>读 IVFC 层表 → 自动定位 RomFS 头 → 遍历文件树</td></tr>
+  <tr><td class="mono">romfs_dump.py</td><td>Yaz0 解压 ＋ SARC 解析（无终止符的正确实现）</td></tr>
+  <tr><td class="mono">msbt_dump.py</td><td>MSBT 文本表提取（UTF-16）</td></tr>
+</table>
+<div class="note info">
+  <b>复用要点：</b>Yaz0 <b>没有结束标记</b>，解码一直进行到输出达到 header 声明的大小；
+  <code>00 00</code> 是<b>合法回引用</b>（nibble=0 → 读第三字节定长，dist=1 → 重复上一字节）。
+  误判为 EOF 会截断大多数流（本机 41 个流里有 24 个被截断）。
+</div>
+
+<h2>11 · 尚未验证 / 下一步可做</h2>
+<ul>
+  <li><b>固件包其余 title 的内容普查</b>：目前只完整解析了 swkbd、MiiEdit(1009)。其余 Program/Data title 可批量解密，确认有无 IME 数据。</li>
+  <li><b>NAND SYSTEM 分区</b>：若取得 per-console 密钥，可核对实机 SYSTEM 分区与固件包是否一致。</li>
+  <li><b>实机验证中文可输入集</b>：改系统语言 ＋ 3~5 个游戏实测 swkbd 实际提供哪些输入模式。</li>
+</ul>
+
+<footer>
+  报告工程：<code>D:/proj/WorkBuddy/ns-ime/</code>　·　结论文档：<code>FINDINGS.md</code>　·　2026-09-27
+</footer>
+
+</div>
+</body>
+</html>
