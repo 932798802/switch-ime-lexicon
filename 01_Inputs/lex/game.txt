@@ -396,3 +396,372 @@ fate
 成就 cheng jiu
 奖杯 jiang bei
 白金 bai jin
+
+# ---- 以下由 mk_game.py 自动注音并入（源自 game-words.txt）----
+御天之剑 yu tian zhi jian
+时之笛 shi zhi di
+织梦岛 zhi meng dao
+马里奥赛车 ma li ao sai che
+马里奥奥德赛 ma li ao ao de sai
+马里奥派对 ma li ao pai dui
+马里奥制造 ma li ao zhi zao
+纸片马里奥 zhi pian ma li ao
+马里奥兄弟 ma li ao xiong di
+路易吉鬼屋 lu yi ji gui wu
+宝可梦剑盾 bao ke meng jian dun
+宝可梦朱紫 bao ke meng zhu zi
+宝可梦传说 bao ke meng chuan shuo
+伊布 yi bu
+动物之森 dong wu zhi sen
+瓦力欧 wa li ou
+瓦里奥 wa li ao
+大乱斗 da luan dou
+俄罗斯方块 e luo si fang kuai
+星际火狐 xing ji huo hu
+地球冒险 di qiu mao xian
+光神话 guang shen hua
+瓦里奥制造 wa li ao zhi zao
+高级战争 gao ji zhan zheng
+健身环 jian shen huan
+健身环大冒险 jian shen huan da mao xian
+马力欧派对 ma li ou pai dui
+咚奇刚 dong qi gang
+卡比 ka bi
+怪物猎人崛起 guai wu lie ren jue qi
+怪物猎人荒野 guai wu lie ren huang ye
+只狼影逝二度 zhi lang ying shi er du
+饥荒 ji huang
+雨中冒险 yu zhong mao xian
+挺进地牢 ting jin di lao
+蜘蛛侠 zhi zhu xia
+侠盗猎车手 xia dao lie che shou
+战争机器 zhan zheng ji qi
+古墓丽影 gu mu li ying
+生化奇兵 sheng hua qi bing
+质量效应 zhi liang xiao ying
+龙腾世纪 long teng shi ji
+消逝的光芒 xiao shi de guang mang
+瘟疫传说 wen yi chuan shuo
+极乐迪斯科 ji le di si ke
+传说之下 chuan shuo zhi xia
+蔚蓝 wei lan
+无主之地 wu zhu zhi di
+命运 ming yun
+魔兽争霸 mo shou zheng ba
+炉石传说 lu shi chuan shuo
+风暴英雄 feng bao ying xiong
+大航海时代 da hang hai shi dai
+战国无双 zhan guo wu shuang
+星之海洋 xing zhi hai yang
+王国之心 wang guo zhi xin
+最终幻想七 zui zhong huan xiang qi
+最终幻想十六 zui zhong huan xiang shi liu
+王国之泪限定 wang guo zhi lei xian ding
+勇气默示录 yong qi mo shi lu
+星之卡比探索 xing zhi ka bi tan suo
+密特罗德究极 mi te luo de jiu ji
+贝优妮塔 bei you ni ta
+猎天使魔女三 lie tian shi mo nv san
+崩坏三 beng huai san
+无畏契约 wu wei qi yue
+永劫无间 yong jie wu jian
+剑网三 jian wang san
+天涯明月刀 tian ya ming yue dao
+逆水寒 ni shui han
+鸣潮 ming chao
+蔚蓝档案 wei lan dang an
+公主连结 gong zhu lian jie
+香肠派对 xiang chang pai dui
+元气骑士 yuan qi qi shi
+迷你世界 mi ni shi jie
+部落冲突 bu luo chong tu
+皇室战争 huang shi zhan zheng
+江南百景图 jiang nan bai jing tu
+剑与远征 jian yu yuan zheng
+一念逍遥 yi nian xiao yao
+决战平安京 jue zhan ping an jing
+荒野行动 huang ye xing dong
+梦幻西游 meng huan xi you
+大话西游 da hua xi you
+剑侠情缘 jian xia qing yuan
+完美世界 wan mei shi jie
+诛仙 zhu xian
+天龙八部 tian long ba bu
+跑跑卡丁车 pao pao ka ding che
+冒险岛 mao xian dao
+剑灵 jian ling
+永恒之塔 yong heng zhi ta
+上古世纪 shang gu shi ji
+黑色沙漠 hei se sha mo
+失落的方舟 shi luo de fang zhou
+命运方舟 ming yun fang zhou
+单机 dan ji
+网游 wang you
+页游 ye you
+主机 zhu ji
+街机 jie ji
+模拟器 mo ni qi
+电竞 dian jing
+竞技 jing ji
+电脑游戏 dian nao you xi
+电视游戏 dian shi you xi
+通关 tong guan
+全成就 quan cheng jiu
+全收集 quan shou ji
+一周目 yi zhou mu
+三周目 san zhou mu
+秘籍 mi ji
+作弊 zuo bi
+外挂 wai gua
+私服 si fu
+修改器 xiu gai qi
+金手指 jin shou zhi
+血瓶 xue ping
+体力条 ti li tiao
+经验值 jing yan zhi
+升级 sheng ji
+属性 shu xing
+技能 ji neng
+道具 dao ju
+背包 bei bao
+仓库 cang ku
+商店 shang dian
+交易 jiao yi
+拍卖行 pai mai hang
+加血 jia xue
+重生 chong sheng
+阵亡 zhen wang
+秒杀 miao sha
+硬直 ying zhi
+后摇 hou yao
+前摇 qian yao
+冷却时间 leng que shi jian
+爆装 bao zhuang
+开箱 kai xiang
+通行证 tong xing zheng
+战令 zhan ling
+促销 cu xiao
+首充 shou chong
+礼包 li bao
+开黑 kai hei
+组队 zu dui
+排位 pai wei
+天梯 tian ti
+段位 duan wei
+上分 shang fen
+掉分 diao fen
+带飞 dai fei
+躺赢 tang ying
+翻盘 fan pan
+逆风 ni feng
+顺风 shun feng
+翻车 fan che
+挂机 gua ji
+维护 wei hu
+更新 geng xin
+版本 ban ben
+赛季 sai ji
+活动 huo dong
+公告 gong gao
+像素风 xiang su feng
+重置 chong zhi
+冷饭 leng fan
+续作 xu zuo
+前传 qian chuan
+外传 wai zhuan
+破解 po jie
+盗版 dao ban
+光盘 guang pan
+十字键 shi zi jian
+扳机 ban ji
+震动 zhen dong
+触屏 chu ping
+键鼠 jian shu
+外设 wai she
+显示器 xian shi qi
+特效 te xiao
+推图 tui tu
+刷图 shua tu
+刷材料 shua cai liao
+种田 zhong tian
+放置 fang zhi
+摆烂 bai lan
+摸鱼 mo yu
+台词 tai ci
+结局 jie ju
+真结局 zhen jie ju
+隐藏结局 yin cang jie ju
+彩蛋 cai dan
+细节 xi jie
+设定 she ding
+世界观 shi jie guan
+角色 jue se
+主角 zhu jue
+配角 pei jue
+玩家 wan jia
+队友 dui you
+对手 dui shou
+敌人 di ren
+队伍 dui wu
+阵容 zhen rong
+搭配 da pei
+战士 zhan shi
+头目 tou mu
+精英怪 jing ying guai
+小怪 xiao guai
+杂兵 za bing
+首领 shou ling
+最终头目 zui zhong tou mu
+职业 zhi ye
+转职 zhuan zhi
+升级系统 sheng ji xi tong
+任务 ren wu
+日常 ri chang
+团本 tuan ben
+地下城 di xia cheng
+迷宫 mi gong
+地牢 di lao
+头目战 tou mu zhan
+关卡 guan qia
+场景 chang jing
+地图 di tu
+传送 chuan song
+传送点 chuan song dian
+回城 hui cheng
+复活点 fu huo dian
+技能树 ji neng shu
+装备强化 zhuang bei qiang hua
+强化 qiang hua
+镶嵌 xiang qian
+合成 he cheng
+分解 fen jie
+打造 da zao
+洗练 xi lian
+附魔 fu mo
+鉴定 jian ding
+鉴定师 jian ding shi
+商人 shang ren
+铁匠 tie jiang
+药师 yao shi
+宠物 chong wu
+坐骑 zuo qi
+召唤 zhao huan
+召唤兽 zhao huan shou
+队友招募 dui you zhao mu
+声望 sheng wang
+好感度 hao gan du
+亲密度 qin mi du
+阵营 zhen ying
+公会 gong hui
+军团 jun tuan
+帮派 bang pai
+师徒 shi tu
+结婚 jie hun
+结婚系统 jie hun xi tong
+聊天 liao tian
+频道 pin dao
+世界频道 shi jie pin dao
+组队频道 zu dui pin dao
+好友 hao you
+黑名单 hei ming dan
+举报 ju bao
+屏蔽 ping bi
+封号 feng hao
+封禁 feng jin
+禁言 jin yan
+手残 shou can
+菜鸡 cai ji
+萌新 meng xin
+新手 xin shou
+老玩家 lao wan jia
+肝帝 gan di
+氪佬 ke lao
+拉胯 la kua
+起飞 qi fei
+上头 shang tou
+真香 zhen xiang
+劝退 quan tui
+背刺 bei ci
+送人头 song ren tou
+蹲草 dun cao
+偷袭 tou xi
+阴人 yin ren
+开摆 kai bai
+社死 she si
+破防了 po fang le
+泪目 lei mu
+离谱 li pu
+绝了 jue le
+好耶 hao ye
+乐子人 le zi ren
+杠精 gang jing
+喷子 pen zi
+嘴替 zui ti
+社牛 she niu
+社恐 she kong
+整活 zheng huo
+缝合 feng he
+烂活 lan huo
+神作 shen zuo
+神优化 shen you hua
+渣优化 zha you hua
+跑图 pao tu
+观光 guan guang
+云玩家 yun wan jia
+视频通关 shi pin tong guan
+安利 an li
+入坑 ru keng
+退坑 tui keng
+回坑 hui keng
+重开 zhong kai
+删档 shan dang
+重练 zhong lian
+开小号 kai xiao hao
+大号 da hao
+小号 xiao hao
+账号 zhang hao
+账号安全 zhang hao an quan
+绑定 bang ding
+解绑 jie bang
+验证码 yan zheng ma
+充值 chong zhi
+退款 tui kuan
+客服 ke fu
+在线客服 zai xian ke fu
+人工客服 ren gong ke fu
+索尼 suo ni
+微软 wei ruan
+育碧 yu bi
+动视暴雪 dong shi bao xue
+卡普空 ka pu kong
+万代南梦宫 wan dai nan meng gong
+光荣特库摩 guang rong te ku mo
+世嘉 shi jia
+科乐美 ke le mei
+太东 tai dong
+光荣 guang rong
+南梦宫 nan meng gong
+史克威尔 shi ke wei er
+艾尼克斯 ai ni ke si
+腾讯 teng xun
+网易 wang yi
+米哈游 mi ha you
+莉莉丝 li li si
+鹰角网络 ying jiao wang luo
+叠纸游戏 die zhi you xi
+三七互娱 san qi hu yu
+游戏平台 you xi ping tai
+主机平台 zhu ji ping tai
+云游戏 yun you xi
+串流 chuan liu
+远程游玩 yuan cheng you wan
+会员 hui yuan
+订阅 ding yue
+联机会员 lian ji hui yuan
+数字商店 shu zi shang dian
+电子商店 dian zi shang dian
+预载 yu zai
+预下载 yu xia zai
+跨平台 kua ping tai
+联机对战 lian ji dui zhan
+云存档服务 yun cun dang fu wu

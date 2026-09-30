@@ -34,6 +34,7 @@ LEX = os.path.join(ROOT, "01_Inputs", "lex")
 sys.path.insert(0, HERE)
 
 from mkdict import is_cjk_word
+from sensitive import SensitiveFilter, filter_rows, write_removed_report
 
 # 设备口径：ü → v（与 mkdict / 设备一致）
 TRANS = str.maketrans({"ü": "v", "ǖ": "v", "ǘ": "v", "ǚ": "v", "ǜ": "v"})
@@ -112,8 +113,15 @@ def main():
     ap.add_argument("--game-weight", type=float, default=100000.0,
                     help="游戏词条的权重（默认 100000，保证优先入选）")
     ap.add_argument("--out", default=None)
-    ap.add_argument("--maxwlen", type=int, default=11)
+    ap.add_argument("--maxwlen", type=int, default=6,
+                    help="词长上限（字）。默认 6 —— 删掉 7 字及以上的超长词"
+                         "（2026-09-30 我要求；此前为 11）")
     ap.add_argument("--maxrlen", type=int, default=36)
+    ap.add_argument("--no-sensitive", action="store_true",
+                    help="停用敏感词过滤")
+    ap.add_argument("--removed-report",
+                    default="10_Other/sensitive-removed-lexicon.txt",
+                    help="被敏感词过滤剔除的清单（供人工审核）")
     a = ap.parse_args()
 
     lex = a.lex or [os.path.join(LEX, f)
@@ -140,6 +148,7 @@ def main():
     # 否则游戏词会带着 rime 的低权重（常见 100）沉到 88 万条的最后，
     # 后续按权重取词时会被漏掉。
     best = {}
+    n_long = 0
     for word, syl, w, src in rows:
         if not is_cjk_word(word):
             continue
@@ -147,6 +156,8 @@ def main():
         if not full or not full.isascii() or not full.isalpha():
             continue
         if len(word) > a.maxwlen or len(full) > a.maxrlen:
+            if len(word) > a.maxwlen:
+                n_long += 1
             continue
         # 简拼：多音节才生成（单音节 = 单字，简拼等于全拼，没意义）
         abbr = "".join(s[0] for s in syl) if len(syl) >= 2 else "-"
@@ -159,6 +170,17 @@ def main():
 
     keep = [(k[0], v[0], k[1], v[1], v[2]) for k, v in best.items()]
     keep.sort(key=lambda r: -r[3])
+    print("  超长词（>%d 字）剔除 %d 条" % (a.maxwlen, n_long))
+
+    print("=== 敏感词过滤 ===")
+    sf = SensitiveFilter(enabled=not a.no_sensitive)
+    keep, drop = filter_rows(keep, sf)
+    if drop:
+        rp = (a.removed_report if os.path.isabs(a.removed_report)
+              else os.path.join(ROOT, a.removed_report))
+        os.makedirs(os.path.dirname(rp), exist_ok=True)
+        write_removed_report(drop, rp, sf)
+
     n_game = sum(1 for r in keep if r[4] == "game")
     print("  保留 %d 条（其中标记为 game 的 %d 条）" % (len(keep), n_game))
 

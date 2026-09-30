@@ -53,6 +53,7 @@ sys.path.insert(0, HERE)
 
 import njdc_lib as L
 from mkdict import is_cjk_word
+from sensitive import SensitiveFilter
 
 # 原版固件词典（与新版合并，保证不丢原覆盖）。
 # 2026-09-30 目录重组后位于 01_Inputs/firmware/ 下。
@@ -141,27 +142,46 @@ def take_by_budget(pool, start, mb_target, verbose_tag=""):
     return out
 
 
-def write_dict(entries, merge_path, out_paths, tail_v, verbose=True):
+def write_dict(entries, merge_path, out_paths, tail_v, verbose=True, sf=None,
+               maxwlen=None):
     """entries: [(读法, 表记)]；并入 merge_path 的原版条目后写出 NJDC。
 
     out_paths: 输出路径列表 —— 同一份内容写到每个路径
                （用于「GB18030 / GB2312 双编码目录各放一份」）。
+    sf:        SensitiveFilter；原版词典里命中敏感词的条目会被跳过
+               （否则原版会把敏感词重新带回产物里）。
+    maxwlen:   表记字数上限；原版词典里更长的条目会被跳过
+               （2026-09-30：原版含 237 条 >6 字的专有名词）。
     """
     if isinstance(out_paths, str):
         out_paths = [out_paths]
     have = set(entries)
     ents = list(entries)
     n_orig = 0
+    n_skip = 0
+    n_long = 0
     if merge_path and os.path.isfile(merge_path):
         o = L.parse_njdc(open(merge_path, "rb").read())
         for e in o["entries"]:
-            if e not in have:
-                ents.append(e)
-                have.add(e)
-                n_orig += 1
+            if e in have:
+                continue
+            if maxwlen and len(e[1]) > maxwlen:
+                n_long += 1
+                continue
+            if sf is not None and sf.is_bad(e[1]):
+                n_skip += 1
+                continue
+            ents.append(e)
+            have.add(e)
+            n_orig += 1
         if verbose:
-            print("        并入原版 %-14s %d 条（新增 %d）"
-                  % (os.path.basename(merge_path), o["N"], n_orig))
+            extra = ""
+            if n_long:
+                extra += "，跳过超长 %d" % n_long
+            if n_skip:
+                extra += "，跳过敏感 %d" % n_skip
+            print("        并入原版 %-14s %d 条（新增 %d%s）"
+                  % (os.path.basename(merge_path), o["N"], n_orig, extra))
     ents.sort(key=lambda e: e[0].encode("utf-16-be"))
     out = L.build_njdc(ents, tail_values=[tail_v] * len(ents))
     for p in out_paths:
@@ -229,10 +249,18 @@ def main():
                     help="base3 里生成多少条简拼")
     ap.add_argument("--abbrev-allow-dup", action="store_true",
                     help="不过滤「与同词其它读法撞车」的简拼（默认过滤，见 build 内注释）")
-    ap.add_argument("--mb1", type=float, default=4.28, help="base1 目标大小(MB)")
-    ap.add_argument("--mb2", type=float, default=4.42, help="base2 目标大小(MB)")
+    ap.add_argument("--all-three", action="store_true",
+                    help="同时生成 base1/base2。默认只输出 base3 —— 2026-09-30 实机"
+                         "实验证实「大小上限是所有词典的字节总量 ≈5.3 MB」，三本一起装"
+                         "时只有 njubase1.a 生效")
+    ap.add_argument("--mb1", type=float, default=4.28, help="base1 目标大小(MB)（需 --all-three）")
+    ap.add_argument("--mb2", type=float, default=4.42, help="base2 目标大小(MB)（需 --all-three）")
     ap.add_argument("--tail-word", type=int, default=32, help="新词尾表值 0..63")
     ap.add_argument("--tail-abbr", type=int, default=58, help="简拼尾表值 0..63")
+    ap.add_argument("--no-sensitive", action="store_true",
+                    help="停用敏感词过滤（含并入原版时的过滤）")
+    ap.add_argument("--maxwlen", type=int, default=6,
+                    help="表记字数上限；原版词典里更长的条目也会被跳过（默认 6）")
     a = ap.parse_args()
 
     tsv = a.tsv or os.path.join(LEX, "ALL.tsv")
@@ -262,9 +290,23 @@ def main():
     def paths(name):
         return [os.path.join(d, name) for d in dirs]
 
+    # 敏感词过滤：作用在「并入原版」这一步 ——
+    # 原版词典自己也含敏感词（njubase3.a 实测命中 77 条多字词），
+    # 不过滤就会把它们重新带回产物。
+    sf = SensitiveFilter(enabled=not a.no_sensitive)
+
     sz3, n3, _merged3 = write_dict(b3_entries,
                                    os.path.join(ORIG, "njubase3.a"),
-                                   paths("njubase3.a"), a.tail_word)
+                                   paths("njubase3.a"), a.tail_word, sf=sf,
+                                   maxwlen=a.maxwlen)
+
+    if not a.all_three:
+        print()
+        print("（只输出 njubase3.a）")
+        print("  2026-09-30 实机实验证实：**大小上限是「所有词典的字节总量」≈5.3 MB**，")
+        print("  不是单本。三本一起装时只有 njubase1.a 会生效，反而丢掉词频最高的那批词。")
+        print("  要生成三本供对照实验，加 --all-three。")
+        return 0
 
     # ---------------- base1 / base2：按字节预算继续取 ----------------
     pos = a.base3_words
@@ -274,7 +316,8 @@ def main():
     print("      %d 条" % len(chunk1))
     sz1, n1, _m1 = write_dict([(r[0], r[2]) for r in chunk1],
                               os.path.join(ORIG, "njubase1.a"),
-                              paths("njubase1.a"), a.tail_word)
+                              paths("njubase1.a"), a.tail_word, sf=sf,
+                              maxwlen=a.maxwlen)
 
     print("=== 5. base2（目标 %.2f MB） ===" % a.mb2)
     chunk2 = take_by_budget(keep, pos, a.mb2)
@@ -282,7 +325,8 @@ def main():
     print("      %d 条" % len(chunk2))
     sz2, n2, _m2 = write_dict([(r[0], r[2]) for r in chunk2],
                               os.path.join(ORIG, "njubase2.a"),
-                              paths("njubase2.a"), a.tail_word)
+                              paths("njubase2.a"), a.tail_word, sf=sf,
+                              maxwlen=a.maxwlen)
 
     # 汇总（产物即 04_Outputs/<版本>/atmosphere/... 下的三本 .a）
     print()
